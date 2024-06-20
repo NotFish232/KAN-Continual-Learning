@@ -1,4 +1,5 @@
 from typing import Callable
+
 from matplotlib import pyplot as plt
 
 
@@ -21,8 +22,9 @@ c = [5, -5, 3, 2]
 
 
 bases = [knot_function(n, k, knot_vector) for n in range(len(knot_vector) - k - 1)]
-x = [i / 20 for i in range(120)]
-y = [sum(i * j(t) for i, j in zip(c, bases)) for t in x]
+x = [i / 200 for i in range(1200)] 
+y = [sum(i * j(t) for i, j in zip(c, bases)) for t in x] + c
+x += [len(knot_vector) / len(c) * i for i in range(len(c))]
 
 plt.scatter(x, y)
 plt.show()
