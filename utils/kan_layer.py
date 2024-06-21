@@ -59,17 +59,15 @@ class KanLayer(nn.Module):
         self.w_s = nn.Parameter(T.FloatTensor(1))
 
         self.spline_parameters = nn.Parameter(
-            T.randn((in_dim, out_dim, num_knots - spline_order))
+            T.randn((out_dim, in_dim, num_knots - spline_order))
         )
 
         self.basis_functions = BSplineBasisFunctions(spline_order, num_knots)
 
     def forward(self: Self, x: T.Tensor) -> T.Tensor:
-        bases = self.basis_functions(x.flatten()).reshape(*x.shape, -1)
-        print(bases.shape)
-        print(self.spline_parameters.shape)
-
-        exit(1)
+        bases = self.basis_functions(x.flatten()).reshape(*x.shape, -1).unsqueeze(1)
+        splines = T.sum(self.spline_parameters * bases, dim=(2, 3))
+        return splines
 
 
 def main() -> None:
