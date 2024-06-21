@@ -1,7 +1,9 @@
 import torch as T
-from torch import nn
+from torch import nn, optim
+from torch.nn import functional as F
 from typing_extensions import Self
 from matplotlib import pyplot as plt
+from time import perf_counter
 
 
 class BSplineBasisFunctions(nn.Module):
@@ -14,7 +16,7 @@ class BSplineBasisFunctions(nn.Module):
         self.knot_vector: T.Tensor
         self.register_buffer(
             "knot_vector",
-            T.linspace(-1, 1, num_knots),
+            T.linspace(-1.5, 1.5, num_knots),
             persistent=False,
         )
 
@@ -44,8 +46,8 @@ class KanLayer(nn.Module):
         self: Self,
         in_dim: int,
         out_dim: int,
-        spline_order: int = 3,
-        num_knots: int = 7,
+        spline_order: int,
+        num_knots: int,
     ) -> None:
         super().__init__()
 
@@ -55,8 +57,8 @@ class KanLayer(nn.Module):
         self.spline_order = spline_order
         self.num_knots = num_knots
 
-        self.w_b = nn.Parameter(T.FloatTensor(1))
-        self.w_s = nn.Parameter(T.FloatTensor(1))
+        self.w_b = nn.Parameter(T.tensor(1, dtype=T.float32))
+        self.w_s = nn.Parameter(T.tensor(1, dtype=T.float32))
 
         self.spline_parameters = nn.Parameter(
             T.randn((out_dim, in_dim, num_knots - spline_order))
@@ -65,18 +67,60 @@ class KanLayer(nn.Module):
         self.basis_functions = BSplineBasisFunctions(spline_order, num_knots)
 
     def forward(self: Self, x: T.Tensor) -> T.Tensor:
-        bases = self.basis_functions(x.flatten()).reshape(*x.shape, -1).unsqueeze(1)
-        splines = T.sum(self.spline_parameters * bases, dim=(2, 3))
-        return splines
+        # x.shape (batch_size, in_dim)
+        bases = self.basis_functions(x.flatten()).reshape(*x.shape, -1).unsqueeze(1) 
+        # bases.shape (batch_size, 1, in_dim, num_knots - spline_order)
+        splines = T.sum(self.spline_parameters * bases, dim=-1)
+        # splines.shape (batch_size, out_dim, in_dim)
+        final = T.sum(self.w_b * F.silu(x.unsqueeze(1)) + self.w_s * splines, dim=-1)
+        # final.shape (batch_size, out_dim)
+        return final
+
+
+class KanModel(nn.Module):
+    def __init__(
+        self: Self, dims: list[int], spline_order: int = 3, num_knots: int = 7
+    ) -> None:
+        super().__init__()
+
+        self.layers = nn.ModuleList(
+            KanLayer(d_1, d_2, spline_order, num_knots)
+            for d_1, d_2 in zip(dims, dims[1:])
+        )
+
+    def forward(self: Self, x: T.Tensor) -> T.Tensor:
+        for layer in self.layers:
+            x = layer(x)
+        return x
 
 
 def main() -> None:
     device = T.device("cuda")
 
-    k = KanLayer(2, 3)
-    y = k(T.randn(55, 2))
+    model = KanLayer(1, 1, 3, 50)
+    print(sum(p.numel() for p in model.parameters()))
+    optimizer = optim.Adam(model.parameters(), 1e-2)
+    criterion = nn.MSELoss()
 
-    print(y)
+    x = T.linspace(-1, 1, 500).unsqueeze(1)
+    y = x[:, :1] ** 2 - T.sin(3 * x ** 3) + T.cos(15 * x ** 2)
+
+    while True:
+        y_hat = model(x)
+        loss = criterion(y_hat, y)
+        loss.backward()
+
+        optimizer.step()
+        optimizer.zero_grad()
+
+        plt.clf()
+        plt.title(f"Loss: {loss:.5f}")
+        for i in range(y.shape[1]):
+            plt.plot(x, y[:, i])
+            plt.plot(x, y_hat.detach()[:, i])
+        plt.pause(0.01)
+
+    plt.show()
 
 
 if __name__ == "__main__":
