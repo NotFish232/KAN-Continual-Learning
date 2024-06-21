@@ -16,7 +16,7 @@ class BSplineBasisFunctions(nn.Module):
         self.knot_vector: T.Tensor
         self.register_buffer(
             "knot_vector",
-            T.linspace(-1 - 1 / num_knots, 1 + 1 / num_knots, num_knots),
+            T.linspace(-1 - 2 / num_knots, 1 + 2 / num_knots, num_knots),
             persistent=False,
         )
 
@@ -97,14 +97,14 @@ class KanModel(nn.Module):
 def main() -> None:
     device = T.device("cuda")
 
-    model = KanLayer(1, 1, 3, 20)
+    model = KanLayer(1, 1, 3, 25)
     print(model.state_dict().keys())
     print(sum(p.numel() for p in model.parameters()))
     optimizer = optim.Adam(model.parameters(), 1e-2)
     criterion = nn.MSELoss()
 
-    x = T.linspace(-10, 30, 500).unsqueeze(1)
-    y = (x[:, :1] / 10) ** 2 - T.sin((x / 3) ** 3) + T.cos((x / 2) ** 2)
+    x = T.linspace(-1, 1, 500).unsqueeze(1)
+    y = (x[:, :1]) ** 2 - T.sin((2 * x) ** 3) + T.cos((3 * x) ** 2)
 
     while True:
         y_hat = model(x)
