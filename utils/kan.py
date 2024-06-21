@@ -13,11 +13,10 @@ class BSplineBasisFunctions(nn.Module):
         self.spline_order = spline_order
         self.num_knots = num_knots
 
-        interval = 1 + 1 / num_knots
         self.knot_vector: T.Tensor
         self.register_buffer(
             "knot_vector",
-            T.linspace(-interval, interval, num_knots),
+            T.linspace(-1 - 1 / num_knots, 1 + 1 / num_knots, num_knots),
             persistent=False,
         )
 
@@ -104,8 +103,8 @@ def main() -> None:
     optimizer = optim.Adam(model.parameters(), 1e-2)
     criterion = nn.MSELoss()
 
-    x = T.linspace(-1, 1, 500).unsqueeze(1)
-    y = x[:, :1] ** 2 - T.sin(3 * x**3) + T.cos(15 * x**2)
+    x = T.linspace(-10, 30, 500).unsqueeze(1)
+    y = (x[:, :1] / 10) ** 2 - T.sin((x / 3) ** 3) + T.cos((x / 2) ** 2)
 
     while True:
         y_hat = model(x)
