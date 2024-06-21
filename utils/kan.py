@@ -3,7 +3,7 @@ from torch import nn, optim
 from torch.nn import functional as F
 from typing_extensions import Self
 from matplotlib import pyplot as plt
-from time import perf_counter
+import math
 
 
 class BSplineBasisFunctions(nn.Module):
@@ -13,10 +13,11 @@ class BSplineBasisFunctions(nn.Module):
         self.spline_order = spline_order
         self.num_knots = num_knots
 
+        interval = 1 + 1 / num_knots
         self.knot_vector: T.Tensor
         self.register_buffer(
             "knot_vector",
-            T.linspace(-1.5, 1.5, num_knots),
+            T.linspace(-interval, interval, num_knots),
             persistent=False,
         )
 
@@ -68,7 +69,7 @@ class KanLayer(nn.Module):
 
     def forward(self: Self, x: T.Tensor) -> T.Tensor:
         # x.shape (batch_size, in_dim)
-        bases = self.basis_functions(x.flatten()).reshape(*x.shape, -1).unsqueeze(1) 
+        bases = self.basis_functions(x.flatten()).reshape(*x.shape, -1).unsqueeze(1)
         # bases.shape (batch_size, 1, in_dim, num_knots - spline_order)
         splines = T.sum(self.spline_parameters * bases, dim=-1)
         # splines.shape (batch_size, out_dim, in_dim)
@@ -97,19 +98,19 @@ class KanModel(nn.Module):
 def main() -> None:
     device = T.device("cuda")
 
-    model = KanLayer(1, 1, 3, 50)
+    model = KanLayer(1, 1, 3, 20)
+    print(model.state_dict().keys())
     print(sum(p.numel() for p in model.parameters()))
     optimizer = optim.Adam(model.parameters(), 1e-2)
     criterion = nn.MSELoss()
 
     x = T.linspace(-1, 1, 500).unsqueeze(1)
-    y = x[:, :1] ** 2 - T.sin(3 * x ** 3) + T.cos(15 * x ** 2)
+    y = x[:, :1] ** 2 - T.sin(3 * x**3) + T.cos(15 * x**2)
 
     while True:
         y_hat = model(x)
         loss = criterion(y_hat, y)
         loss.backward()
-
         optimizer.step()
         optimizer.zero_grad()
 
