@@ -1,0 +1,7 @@
+KAN paper used b-splines to represent arbitrary functions
+b-splines have the following issues
+- c2 continuity might be a downside
+- doesnt apply to the full domain (you have to know the grid range at the beginning)
+- expensive(ish) formula
+
+try using fourier series instead
