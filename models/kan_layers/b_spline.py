@@ -1,10 +1,7 @@
 import torch as T
-from torch import nn, optim
+from torch import nn
 from torch.nn import functional as F
 from typing_extensions import Self
-from matplotlib import pyplot as plt
-import math
-
 
 class BSplineBasisFunctions(nn.Module):
     def __init__(self: Self, spline_order: int, num_knots: int) -> None:
@@ -41,7 +38,7 @@ class BSplineBasisFunctions(nn.Module):
         return basis_functions
 
 
-class KanLayer(nn.Module):
+class BSplineKanLayer(nn.Module):
     def __init__(
         self: Self,
         in_dim: int,
@@ -76,52 +73,3 @@ class KanLayer(nn.Module):
         # final.shape (batch_size, out_dim)
         return final
 
-
-class KanModel(nn.Module):
-    def __init__(
-        self: Self, dims: list[int], spline_order: int = 3, num_knots: int = 7
-    ) -> None:
-        super().__init__()
-
-        self.layers = nn.ModuleList(
-            KanLayer(d_1, d_2, spline_order, num_knots)
-            for d_1, d_2 in zip(dims, dims[1:])
-        )
-
-    def forward(self: Self, x: T.Tensor) -> T.Tensor:
-        for layer in self.layers:
-            x = layer(x)
-        return x
-
-
-def main() -> None:
-    device = T.device("cuda")
-
-    model = KanLayer(1, 1, 3, 25)
-    print(model.state_dict().keys())
-    print(sum(p.numel() for p in model.parameters()))
-    optimizer = optim.Adam(model.parameters(), 1e-2)
-    criterion = nn.MSELoss()
-
-    x = T.linspace(-1, 1, 500).unsqueeze(1)
-    y = (x[:, :1]) ** 2 - T.sin((2 * x) ** 3) + T.cos((3 * x) ** 2)
-
-    while True:
-        y_hat = model(x)
-        loss = criterion(y_hat, y)
-        loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
-
-        plt.clf()
-        plt.title(f"Loss: {loss:.5f}")
-        for i in range(y.shape[1]):
-            plt.plot(x, y[:, i])
-            plt.plot(x, y_hat.detach()[:, i])
-        plt.pause(0.01)
-
-    plt.show()
-
-
-if __name__ == "__main__":
-    main()
