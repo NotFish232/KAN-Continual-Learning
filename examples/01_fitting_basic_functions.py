@@ -29,6 +29,17 @@ def main() -> None:
 
     writer = SummaryWriter("./runs/")
 
+    # log model parameter counts
+    writer.add_scalars(
+        f"{EXAMPLE_NAME}/parameter_counts",
+        {
+            layer_type.name: sum(p.numel() for p in layer.parameters())
+            for layer_type, layer in layers
+        },
+        0,
+    )
+
+    # log the starting graphs
     for x, y in zip(X * (NUM_POINTS - 1), Y):
         writer.add_scalars(
             f"{EXAMPLE_NAME}/starting_graph",
@@ -45,6 +56,7 @@ def main() -> None:
                     x.item(),
                 )
 
+    # log progress through training
     for epoch in tqdm(range(NUM_EPOCHS)):
         for (layer_type, layer), optimizer in zip(layers, optimizers):
             Y_hat = layer(X)
@@ -59,7 +71,8 @@ def main() -> None:
                 {layer_type.name: loss.detach()},
                 epoch,
             )
-    
+
+    # log the final graphs
     for x, y in zip(X * (NUM_POINTS - 1), Y):
         writer.add_scalars(
             f"{EXAMPLE_NAME}/ending_graph",
