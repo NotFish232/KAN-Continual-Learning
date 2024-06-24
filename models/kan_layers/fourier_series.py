@@ -1,6 +1,5 @@
 import torch as T
-from matplotlib import pyplot as plt
-from torch import nn, optim
+from torch import nn
 from torch.nn import functional as F
 from typing_extensions import Self
 
@@ -28,26 +27,3 @@ class FourierSeriesKanLayer(nn.Module):
         summed_series = T.sum(series, dim=(-1, -2))
         # summed_series.shape (batch_size, out_dim)
         return summed_series
-
-
-if __name__ == "__main__":
-    model = FourierSeriesKanLayer(1, 1, 25)
-    optimizer = optim.Adam(model.parameters(), 1e-2)
-    criterion = nn.MSELoss()
-
-    x = T.linspace(-1, 1, 500).unsqueeze(1)
-    y = x ** 2 - T.sin((2 * x) ** 3) + T.cos((3 * x) ** 2)
-
-    while True:
-        y_hat = model(x)
-        loss = criterion(y_hat, y)
-        loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
-
-        plt.clf()
-        plt.title(f"Loss: {loss:.5f}")
-        for i in range(y.shape[1]):
-            plt.plot(x, y[:, i])
-            plt.plot(x, y_hat.detach()[:, i])
-        plt.pause(0.01)

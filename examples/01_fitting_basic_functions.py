@@ -1,12 +1,11 @@
 from pathlib import Path
 
 import torch as T
-from matplotlib import pyplot as plt
 from torch import nn, optim
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from models.kan_layers import KanLayer  # type: ignore
+from models import KanLayer  # type: ignore
 
 EXAMPLE_NAME = Path(__file__).stem
 
@@ -20,7 +19,7 @@ F = lambda x: x**2 - T.sin((2 * x) ** 3) + T.cos((3 * x) ** 2)
 
 
 def main() -> None:
-    layers = [(layer, layer.value(1, 1, GRID_SIZE)) for layer in KanLayer]
+    layers = [(layer.name, layer.value(1, 1, GRID_SIZE)) for layer in KanLayer]
     optimizers = [optim.Adam(l[1].parameters(), LR) for l in layers]
     criterion = nn.MSELoss()
 
@@ -33,7 +32,7 @@ def main() -> None:
     writer.add_scalars(
         f"{EXAMPLE_NAME}/parameter_counts",
         {
-            layer_type.name: sum(p.numel() for p in layer.parameters())
+            layer_type: sum(p.numel() for p in layer.parameters())
             for layer_type, layer in layers
         },
         0,
@@ -52,7 +51,7 @@ def main() -> None:
             for x, y in zip(X * (NUM_POINTS - 1), Y_hat):
                 writer.add_scalars(
                     f"{EXAMPLE_NAME}/starting_graph",
-                    {layer_type.name: y.item()},
+                    {layer_type: y.item()},
                     x.item(),
                 )
 
@@ -68,7 +67,7 @@ def main() -> None:
 
             writer.add_scalars(
                 f"{EXAMPLE_NAME}/training_loss",
-                {layer_type.name: loss.detach()},
+                {layer_type: loss.detach()},
                 epoch,
             )
 
@@ -85,7 +84,7 @@ def main() -> None:
             for x, y in zip(X * (NUM_POINTS - 1), Y_hat):
                 writer.add_scalars(
                     f"{EXAMPLE_NAME}/ending_graph",
-                    {layer_type.name: y.item()},
+                    {layer_type: y.item()},
                     x.item(),
                 )
 
