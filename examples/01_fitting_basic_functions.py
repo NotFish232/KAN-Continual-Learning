@@ -1,9 +1,10 @@
+from pathlib import Path
+
 import torch as T
+from matplotlib import pyplot as plt
 from torch import nn, optim
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-from matplotlib import pyplot as plt
-from pathlib import Path
 
 from models.kan_layers import KanLayer  # type: ignore
 
@@ -43,7 +44,7 @@ def main() -> None:
                     {layer_type.name: y.item()},
                     x.item(),
                 )
-                
+
     for epoch in tqdm(range(NUM_EPOCHS)):
         for (layer_type, layer), optimizer in zip(layers, optimizers):
             Y_hat = layer(X)
