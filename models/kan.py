@@ -1,9 +1,9 @@
 import torch as T
+from kan_layers import BSplineKanLayer
+from matplotlib import pyplot as plt
 from torch import nn, optim
 from torch.nn import functional as F
 from typing_extensions import Self
-from matplotlib import pyplot as plt
-from kan_layers import BSplineKanLayer
 
 
 class KanModel(nn.Module):
@@ -24,7 +24,7 @@ class KanModel(nn.Module):
 
 
 def main() -> None:
-    model = BSplineKanLayer(1, 1, 3, 25)
+    model = BSplineKanLayer(1, 1, 25, 3)
     optimizer = optim.Adam(model.parameters(), 1e-2)
     criterion = nn.MSELoss()
 

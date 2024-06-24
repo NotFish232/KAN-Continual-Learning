@@ -1,8 +1,8 @@
 import torch as T
-from torch import nn
-from typing_extensions import Self
-from torch import optim
 from matplotlib import pyplot as plt
+from torch import nn, optim
+from torch.nn import functional as F
+from typing_extensions import Self
 
 
 class FourierSeriesKanLayer(nn.Module):
@@ -22,8 +22,8 @@ class FourierSeriesKanLayer(nn.Module):
         # x.shape (batch_size, in_dim)
         grid_x = (x.unsqueeze(-1) * self.grid).unsqueeze(1)
         # grid_x.shape (batch_size, 1, in_dim, grid_size)
-        series = nn.functional.silu(self.fourier_coeffs[0] * T.sin(grid_x))
-        series += nn.functional.silu(self.fourier_coeffs[1] * T.cos(grid_x))
+        series = F.silu(self.fourier_coeffs[0] * T.sin(grid_x))
+        series += F.silu(self.fourier_coeffs[1] * T.cos(grid_x))
         # series.shape (batch_size, out_dim, in_dim, grid_size)
         summed_series = T.sum(series, dim=(-1, -2))
         # summed_series.shape (batch_size, out_dim)
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     criterion = nn.MSELoss()
 
     x = T.linspace(-1, 1, 500).unsqueeze(1)
-    y = (x[:, :1]) ** 2 - T.sin((2 * x) ** 3) + T.cos((3 * x) ** 2)
+    y = x ** 2 - T.sin((2 * x) ** 3) + T.cos((3 * x) ** 2)
 
     while True:
         y_hat = model(x)

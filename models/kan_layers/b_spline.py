@@ -1,7 +1,8 @@
+from typing import Callable
+
 import torch as T
 from torch import nn
 from torch.nn import functional as F
-from typing import Callable
 from typing_extensions import Self
 
 
@@ -45,8 +46,8 @@ class BSplineKanLayer(nn.Module):
         self: Self,
         in_dim: int,
         out_dim: int,
-        spline_order: int,
         num_knots: int,
+        spline_order: int = 3,
         a_fn: Callable = F.silu,
     ) -> None:
         super().__init__()
@@ -54,8 +55,8 @@ class BSplineKanLayer(nn.Module):
         self.in_dim = in_dim
         self.out_dim = out_dim
 
-        self.spline_order = spline_order
         self.num_knots = num_knots
+        self.spline_order = spline_order
 
         self.a_fn = a_fn
 
