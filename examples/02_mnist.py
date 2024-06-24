@@ -19,11 +19,12 @@ MNIST_TEST_PATH = "./datasets/MNIST/mnist_test.csv"
 IMG_SIZE = 28
 
 GRID_SIZE = 15
-NUM_EPOCHS = 5
+NUM_EPOCHS = 10
 LR = 1e-3
 BATCH_SIZE = 32
 TESTING_BATCH_SIZE = 512
 
+ROLLING_LOSS_N = 50
 LOGGING_FREQ = 50
 
 EXAMPLE_NAME = Path(__file__).stem
@@ -140,25 +141,36 @@ def main() -> None:
         0,
     )
 
+    losses = [0.0 for _ in range(len(models))]
+    num_corrects = [0.0 for _ in range(len(models))]
+    num_total = 0
     iteration = 0
     for epoch in range(NUM_EPOCHS):
         for img_batch, label_batch in tqdm(
             training_dataloader, desc=f"Epoch {epoch + 1}"
         ):
-            for (model_type, model), optimizer in zip(models, optimizers):
+            for i, ((model_type, model), optimizer) in enumerate(
+                zip(models, optimizers)
+            ):
                 Y_hat = model(img_batch)
                 loss = criterion(Y_hat, label_batch)
                 loss.backward()
                 optimizer.step()
                 optimizer.zero_grad()
 
+                num_corrects[i] += T.sum(T.argmax(Y_hat, dim=1) == label_batch).item()
+
+                losses[i] += (loss.item() - losses[i]) / ROLLING_LOSS_N
+
+            num_total += img_batch.shape[0]
+
+            if iteration % LOGGING_FREQ == 0:
                 writer.add_scalars(
                     f"{EXAMPLE_NAME}/training_loss",
-                    {model_type: loss.detach()},
+                    {model_type: loss for (model_type, _), loss in zip(models, losses)},
                     iteration,
                 )
 
-            if iteration % LOGGING_FREQ == 0:
                 writer.add_scalars(
                     f"{EXAMPLE_NAME}/testing_accuracy",
                     {
@@ -167,6 +179,17 @@ def main() -> None:
                     },
                     iteration,
                 )
+
+                writer.add_scalars(
+                    f"{EXAMPLE_NAME}/training_accuracy",
+                    {
+                        model_type: nc / num_total
+                        for (model_type, _), nc in zip(models, num_corrects)
+                    },
+                )
+
+                num_corrects = [0.0 for _ in range(len(models))]
+                num_total = 0
 
             iteration += 1
 
