@@ -1,7 +1,9 @@
 import torch as T
 from torch import nn
 from torch.nn import functional as F
+from typing import Callable
 from typing_extensions import Self
+
 
 class BSplineBasisFunctions(nn.Module):
     def __init__(self: Self, spline_order: int, num_knots: int) -> None:
@@ -45,6 +47,7 @@ class BSplineKanLayer(nn.Module):
         out_dim: int,
         spline_order: int,
         num_knots: int,
+        a_fn: Callable = F.silu,
     ) -> None:
         super().__init__()
 
@@ -53,6 +56,8 @@ class BSplineKanLayer(nn.Module):
 
         self.spline_order = spline_order
         self.num_knots = num_knots
+
+        self.a_fn = a_fn
 
         self.w_b = nn.Parameter(T.tensor(1, dtype=T.float32))
         self.w_s = nn.Parameter(T.tensor(1, dtype=T.float32))
@@ -69,7 +74,6 @@ class BSplineKanLayer(nn.Module):
         # bases.shape (batch_size, 1, in_dim, num_knots - spline_order)
         splines = T.sum(self.spline_parameters * bases, dim=-1)
         # splines.shape (batch_size, out_dim, in_dim)
-        final = T.sum(self.w_b * F.silu(x.unsqueeze(1)) + self.w_s * splines, dim=-1)
+        final = T.sum(self.w_b * self.a_fn(x.unsqueeze(1)) + self.w_s * splines, dim=-1)
         # final.shape (batch_size, out_dim)
         return final
-

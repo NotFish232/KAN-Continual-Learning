@@ -24,11 +24,7 @@ class KanModel(nn.Module):
 
 
 def main() -> None:
-    device = T.device("cuda")
-
     model = BSplineKanLayer(1, 1, 3, 25)
-    print(model.state_dict().keys())
-    print(sum(p.numel() for p in model.parameters()))
     optimizer = optim.Adam(model.parameters(), 1e-2)
     criterion = nn.MSELoss()
 
@@ -48,9 +44,6 @@ def main() -> None:
             plt.plot(x, y[:, i])
             plt.plot(x, y_hat.detach()[:, i])
         plt.pause(0.01)
-
-    plt.show()
-
 
 if __name__ == "__main__":
     main()
