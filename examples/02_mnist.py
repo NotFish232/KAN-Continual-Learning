@@ -186,6 +186,7 @@ def main() -> None:
                         model_type: nc / num_total
                         for (model_type, _), nc in zip(models, num_corrects)
                     },
+                    iteration,
                 )
 
                 num_corrects = [0.0 for _ in range(len(models))]
