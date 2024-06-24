@@ -149,7 +149,7 @@ def main() -> None:
         for img_batch, label_batch in tqdm(
             training_dataloader, desc=f"Epoch {epoch + 1}"
         ):
-            for i, ((model_type, model), optimizer) in enumerate(
+            for i, ((_, model), optimizer) in enumerate(
                 zip(models, optimizers)
             ):
                 Y_hat = model(img_batch)
