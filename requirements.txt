@@ -5,3 +5,5 @@ tqdm==4.66.4
 matplotlib==3.9.0
 numpy==1.26.4
 pandas==2.2.2
+pykan==0.0.5
+scikit-learn==1.5.0
