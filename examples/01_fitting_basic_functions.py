@@ -9,7 +9,7 @@ from models import KanLayer  # type: ignore
 
 EXAMPLE_NAME = Path(__file__).stem
 
-NUM_EPOCHS = 1_000
+NUM_EPOCHS = 5_000
 GRID_SIZE = 10
 LR = 1e-2
 NUM_POINTS = 1000
