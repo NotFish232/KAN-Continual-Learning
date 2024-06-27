@@ -5,3 +5,9 @@ b-splines have the following issues
 - expensive(ish) formula
 
 try using fourier series instead
+
+idea of catostrophic forgetting is interesting
+- test it on MNIST
+use official implementation (pykan pypi package) for more sensible results
+inventing new architecture does not matter very much in the grand scheme of things
+I want to do a bigger programming project though so I need to figure out how these things apply
