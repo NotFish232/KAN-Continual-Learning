@@ -73,7 +73,7 @@ def main() -> None:
 
     models = [
         ("MLP", MLP().to(device)),
-        ("KAN", KAN([1, 12, 12, 1]).to(device)),
+        ("KAN", KAN([1, 1], grid=1000, grid_range=[0, N]).to(device)),
     ]
     optimizers = [optim.Adam(model.parameters(), LR) for _, model in models]
     criterion = nn.MSELoss()
@@ -129,7 +129,6 @@ def main() -> None:
                 optimizer.zero_grad()
 
         X_indices = (X_batch * (NUM_POINTS // N - 1)).to(T.int32).squeeze()
-
         ground_truth = T.zeros_like(Y)
         ground_truth[X_indices] = Y_batch
         for x, y in zip(X * (NUM_POINTS // N - 1), ground_truth):
@@ -141,12 +140,9 @@ def main() -> None:
 
         with T.no_grad():
             for model_name, model in models:
-                Y_pred = model(X_batch)
+                Y_pred = model(X)
 
-                full_Y = T.zeros_like(Y)
-                full_Y[X_indices] = Y_pred
-
-                for x, y in zip(X * (NUM_POINTS // N - 1), full_Y):
+                for x, y in zip(X * (NUM_POINTS // N - 1), Y_pred):
                     writer.add_scalars(
                         f"{EXAMPLE_NAME}/partitioned_{n + 1}", {model_name: y.item()}, x.item()
                     )
