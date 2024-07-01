@@ -120,7 +120,7 @@ def main() -> None:
 
 
     for n, (X_batch, Y_batch) in enumerate(zip(X_partitioned, Y_partitioned)):
-        for _ in tqdm(range(NUM_PARTITIONED_EPOCHS), desc=f"Trial {n}"):
+        for _ in tqdm(range(NUM_PARTITIONED_EPOCHS), desc=f"Trial {n + 1}"):
             for (_, model), optimizer in zip(models, optimizers):
                 Y_pred = model(X_batch)
                 loss = criterion(Y_batch, Y_pred)
@@ -135,7 +135,7 @@ def main() -> None:
         ground_truth[X_indices] = Y_batch
         for x, y in zip(X * (NUM_POINTS // N - 1), ground_truth):
             writer.add_scalars(
-                f"{EXAMPLE_NAME}/trial_{n}",
+                f"{EXAMPLE_NAME}/trial_{n + 1}",
                 {"ground_truth": y.item()},
                 x.item(),
             )
