@@ -134,7 +134,7 @@ def main() -> None:
         ground_truth[X_indices] = Y_batch
         for x, y in zip(X * (NUM_POINTS // N - 1), ground_truth):
             writer.add_scalars(
-                f"{EXAMPLE_NAME}/trial_{n + 1}",
+                f"{EXAMPLE_NAME}/partitioned_{n + 1}",
                 {"ground_truth": y.item()},
                 x.item(),
             )
@@ -148,9 +148,21 @@ def main() -> None:
 
                 for x, y in zip(X * (NUM_POINTS // N - 1), full_Y):
                     writer.add_scalars(
-                        f"{EXAMPLE_NAME}/trial_{n + 1}", {model_name: y.item()}, x.item()
+                        f"{EXAMPLE_NAME}/partitioned_{n + 1}", {model_name: y.item()}, x.item()
                     )
+    
+    for x, y in zip(X * (NUM_POINTS // N - 1), Y):
+        writer.add_scalars(
+            f"{EXAMPLE_NAME}/partitioned_final", {"ground_truth": y.item()}, x.item()
+        )
+    with T.no_grad():
+        for model_name, model in models:
+            Y_pred = model(X)
 
+            for x, y in zip(X * (NUM_POINTS // N - 1), Y_pred):
+                writer.add_scalars(
+                    f"{EXAMPLE_NAME}/partitioned_final", {model_name: y.item()}, x.item()
+                )
 
 if __name__ == "__main__":
     main()
