@@ -8,7 +8,6 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from typing_extensions import Self
 
-
 N = 5
 STD = 0.2
 NUM_POINTS = 1_000
