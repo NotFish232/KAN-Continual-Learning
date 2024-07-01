@@ -117,6 +117,13 @@ def main() -> None:
         reset_parameters(model)
         optimizers[i] = optim.Adam(model.parameters(), LR)
 
+    # TODO: Please fix this (configure reset_parameters to work on arbitrary nn.Module)
+    models = [
+        ("MLP", MLP().to(device)),
+        ("KAN", KAN([1, 1], grid=1000, grid_range=[0, N]).to(device)),
+    ]
+    optimizers = [optim.Adam(model.parameters(), LR) for _, model in models]
+
 
     for n, (X_batch, Y_batch) in enumerate(zip(X_partitioned, Y_partitioned)):
         for _ in tqdm(range(NUM_PARTITIONED_EPOCHS), desc=f"Trial {n + 1}"):
