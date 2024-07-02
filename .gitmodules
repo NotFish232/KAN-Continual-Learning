@@ -1,0 +1,3 @@
+[submodule "pykan_editable"]
+	path = pykan_editable
+	url = git@github.com:NotFish232/pykan.git
