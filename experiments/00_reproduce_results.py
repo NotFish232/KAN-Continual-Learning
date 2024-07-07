@@ -1,8 +1,8 @@
 from kan import KAN, KANLayer
-from utils.models import MLP
-from utils.io import ExperimentWriter
-from utils import suggest_MLP_architecture, suggest_KAN_architecture, num_parameters
 
+from utils import num_parameters, suggest_KAN_architecture, suggest_MLP_architecture
+from utils.io import ExperimentWriter
+from utils.models import MLP
 
 NUM_PARAMETERS = 5000
 
