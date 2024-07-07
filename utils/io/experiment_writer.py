@@ -1,8 +1,4 @@
-from pathlib import Path
-
 from typing_extensions import Self
-
-EXPERIMENT_ROOT = Path(__file__).parent / "results"
 
 
 class ExperimentWriter:
