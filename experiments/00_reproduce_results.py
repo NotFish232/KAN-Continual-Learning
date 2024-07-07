@@ -1,10 +1,19 @@
-from kan import KAN, KANLayer
+from kan import KAN
+import torch as T
 
 from utils import num_parameters, suggest_KAN_architecture, suggest_MLP_architecture
 from utils.io import ExperimentWriter
 from utils.models import MLP
+from pathlib import Path
 
-NUM_PARAMETERS = 5000
+
+EXPERIMENT_NAME = Path(__file__).stem
+
+NUM_PEAKS = 10
+NUM_POINTS = 500
+GAUSSIAN_STD = 5
+
+NUM_PARAMETERS = 5_000
 
 MLP_ARCHITECTURE = suggest_MLP_architecture(
     num_inputs=1,
@@ -20,15 +29,44 @@ KAN_ARCHITECTURE, KAN_GRID_SIZE = suggest_KAN_architecture(
 )
 
 
-def main() -> None:
-    mlp = MLP(MLP_ARCHITECTURE)
-    kan = KANLayer(1, 1, 5000)
-    for p in kan.children():
-        print(p, num_parameters(p))
+def guassian(x: T.Tensor, mean: float, std: float) -> T.Tensor:
+    return T.exp(-((x - mean) ** 2) / (2 * std**2))
 
-    print(KAN_ARCHITECTURE, KAN_GRID_SIZE)
-    print(num_parameters(mlp))
-    print(num_parameters(kan))
+
+def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
+    x = T.linspace(0, NUM_PEAKS, NUM_POINTS, device=device).unsqueeze(1)
+    y = T.zeros_like(x)
+    for i in range(NUM_PEAKS):
+        y += guassian(x, i + 0.5, GAUSSIAN_STD)
+
+    return x, y
+
+
+def create_partitioned_dataset(
+    device: T.device,
+) -> tuple[list[T.Tensor], list[T.Tensor]]:
+    X, Y = create_dataset(device)
+    partitioned_X = T.chunk(X, NUM_PEAKS)
+    partitioned_Y = T.chunk(Y, NUM_PEAKS)
+
+    return partitioned_X, partitioned_Y
+
+
+def main() -> None:
+    device = T.device("cuda" if T.cuda.is_available() else "cpu")
+    models = [
+        ("MLP", MLP(MLP_ARCHITECTURE)),
+        ("KAN", KAN(KAN_ARCHITECTURE, KAN_GRID_SIZE)),
+    ]
+
+    writer = ExperimentWriter(EXPERIMENT_NAME)
+
+    X, Y = create_dataset(device)
+    writer.log_graph("training_data", X, Y)
+
+
+    writer.write()
+
 
 if __name__ == "__main__":
     main()

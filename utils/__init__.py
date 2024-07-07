@@ -37,4 +37,4 @@ def suggest_KAN_architecture(
     return architecture, grid_size
 
 def num_parameters(module: nn.Module) -> int:
-    return sum(p.numel() for p in module.parameters())
+    return sum(p.numel() for p in module.parameters() if p.requires_grad)
