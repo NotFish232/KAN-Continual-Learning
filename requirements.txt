@@ -6,6 +6,7 @@ matplotlib==3.9.0
 numpy==1.26.4
 pandas==2.2.2
 scikit-learn==1.5.0
+streamlit==1.36.0
 
 # custom version of pykan
 -e ./pykan_editable
