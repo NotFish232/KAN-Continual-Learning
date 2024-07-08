@@ -4,9 +4,10 @@ import torch as T
 from kan import KAN
 from matplotlib import pyplot as plt
 
-from utils import num_parameters, suggest_KAN_architecture, suggest_MLP_architecture
+from utils import suggest_KAN_architecture, suggest_MLP_architecture, train_model
 from utils.io import ExperimentWriter
 from utils.models import MLP
+from tqdm import tqdm
 
 EXPERIMENT_NAME = Path(__file__).stem
 
@@ -14,12 +15,13 @@ NUM_PEAKS = 5
 NUM_POINTS = 500
 GAUSSIAN_STD = 0.2
 
-NUM_PARAMETERS = 5_000
+NUM_EPOCHS = 200
+NUM_PARAMETERS = 500
 
 MLP_ARCHITECTURE = suggest_MLP_architecture(
     num_inputs=1,
     num_outputs=1,
-    num_layers=4,
+    num_layers=3,
     num_params=NUM_PARAMETERS,
 )
 KAN_ARCHITECTURE, KAN_GRID_SIZE = suggest_KAN_architecture(
@@ -55,10 +57,16 @@ def create_partitioned_dataset(
 
 def main() -> None:
     device = T.device("cuda" if T.cuda.is_available() else "cpu")
-    models = [
-        ("MLP", MLP(MLP_ARCHITECTURE)),
-        ("KAN", KAN(KAN_ARCHITECTURE, KAN_GRID_SIZE)),
-    ]
+    kan = KAN(
+        KAN_ARCHITECTURE,
+        KAN_GRID_SIZE,
+        grid_range=[0, NUM_PEAKS],
+        bias_trainable=False,
+        sp_trainable=False,
+        sb_trainable=False,
+        device=device,
+    )
+    mlp = MLP(MLP_ARCHITECTURE).to(device)
 
     writer = ExperimentWriter(EXPERIMENT_NAME)
 
@@ -74,6 +82,48 @@ def main() -> None:
         ax[i].plot(x.cpu(), y.cpu(), color="black")
         ax[i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
     writer.log_graph("partitioned_function", fig)
+
+    kan_preds = []
+    mlp_preds = []
+
+    for i, (x, y) in tqdm(
+        enumerate(zip(X_partitioned, Y_partitioned)), total=NUM_PEAKS
+    ):
+        dataset = {
+            "train_input": x,
+            "train_label": y,
+            "test_input": x,
+            "test_label": y,
+        }
+
+        kan.train(
+            dataset,
+            steps=NUM_EPOCHS,
+            device=device,
+            update_grid=False,
+            disable_pbar=True,
+        )
+        train_model(mlp, dataset, NUM_EPOCHS)
+
+        with T.no_grad():
+            kan_preds.append(kan(X))
+            mlp_preds.append(mlp(X))
+
+    fig, ax = plt.subplots(3, NUM_PEAKS, figsize=(15, 2))
+    for i, (kan_pred, mlp_pred) in enumerate(zip(kan_preds, mlp_preds)):
+        ax[0][i].plot(X_partitioned[i].cpu(), Y_partitioned[i].cpu(), color="black")
+        ax[0][i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
+        ax[0][i].set_ylim(-0.5, 1.5)
+
+        ax[1][i].plot(X.cpu(), kan_pred.cpu(), color="black")
+        ax[1][i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
+        ax[1][i].set_ylim(-0.5, 1.5)
+
+        ax[2][i].plot(X.cpu(), mlp_pred.cpu(), color="black")
+        ax[2][i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
+        ax[2][i].set_ylim(-0.5, 1.5)
+
+    writer.log_graph("training_graphs", fig)
 
     writer.write()
 

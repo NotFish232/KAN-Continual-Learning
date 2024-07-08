@@ -14,7 +14,7 @@ class MLP(nn.Module):
     def __init__(
         self: Self,
         dimensions: list[int],
-        activation_function: Callable = F.relu,
+        activation_function: Callable = F.tanh,
     ) -> None:
         super().__init__()
 
@@ -26,7 +26,8 @@ class MLP(nn.Module):
             self.layers.append(nn.Linear(dim_1, dim_2))
     
     def forward(self: Self, x: T.Tensor) -> T.Tensor:
-        for layer in self.layers:
+        for i, layer in enumerate(self.layers):
             x = layer(x)
-            x = self.activation_function(x)
+            if i != len(self.layers) - 1:
+                x = self.activation_function(x)
         return x
