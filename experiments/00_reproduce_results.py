@@ -63,10 +63,17 @@ def main() -> None:
     writer = ExperimentWriter(EXPERIMENT_NAME)
 
     X, Y = create_dataset(device)
+    X_partitioned, Y_partitioned = create_partitioned_dataset(device)
+
     fig, ax = plt.subplots()
-    ax.plot(X.cpu(), Y.cpu())
+    ax.plot(X.cpu(), Y.cpu(), color="black")
     writer.log_graph("training_function", fig)
 
+    fig, ax = plt.subplots(1, NUM_PEAKS, figsize=(15, 2))
+    for i, (x, y) in enumerate(zip(X_partitioned, Y_partitioned)):
+        ax[i].plot(x.cpu(), y.cpu(), color="black")
+        ax[i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
+    writer.log_graph("partitioned_function", fig)
 
     writer.write()
 
