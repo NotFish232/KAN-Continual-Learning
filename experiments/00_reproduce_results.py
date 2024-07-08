@@ -1,12 +1,12 @@
-from kan import KAN
+from pathlib import Path
+
 import torch as T
+from kan import KAN
+from matplotlib import pyplot as plt
 
 from utils import num_parameters, suggest_KAN_architecture, suggest_MLP_architecture
 from utils.io import ExperimentWriter
 from utils.models import MLP
-from pathlib import Path
-from matplotlib import pyplot as plt
-
 
 EXPERIMENT_NAME = Path(__file__).stem
 

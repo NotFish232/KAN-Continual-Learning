@@ -3,8 +3,6 @@ import math
 from torch import nn
 
 
-
-
 def suggest_MLP_architecture(
     num_inputs: int,
     num_outputs: int,

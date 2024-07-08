@@ -1,8 +1,10 @@
-from typing_extensions import Self
-from .shared import EXPERIMENT_ROOT
-from typing import Any, Generator
-from natsort import natsorted
 import pickle
+from typing import Any, Generator
+
+from natsort import natsorted
+from typing_extensions import Self
+
+from .shared import EXPERIMENT_ROOT
 
 
 class ExperimentReader:

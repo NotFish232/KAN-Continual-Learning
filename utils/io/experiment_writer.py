@@ -1,10 +1,12 @@
-from typing_extensions import Self
-import torch as T
-from typing import Any
-from .shared import EXPERIMENT_ROOT, LogType
-from datetime import datetime
 import pickle
+from datetime import datetime
+from typing import Any
+
+import torch as T
 from matplotlib.figure import Figure
+from typing_extensions import Self
+
+from .shared import EXPERIMENT_ROOT, LogType
 
 
 class ExperimentWriter:
