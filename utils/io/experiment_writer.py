@@ -1,9 +1,10 @@
 from typing_extensions import Self
 import torch as T
 from typing import Any
-from .shared import EXPERIMENT_ROOT
+from .shared import EXPERIMENT_ROOT, LogType
 from datetime import datetime
-import json
+import pickle
+from matplotlib.figure import Figure
 
 
 class ExperimentWriter:
@@ -17,20 +18,19 @@ class ExperimentWriter:
 
         self.data: list[dict[str, Any]] = []
 
-    def log_graph(self: Self, graph_name: str, x: T.Tensor, y: T.Tensor) -> None:
+    def log_graph(self: Self, graph_name: str, graph: Figure) -> None:
         self.data.append(
             {
-                "type": "graph",
+                "type": LogType.graph,
                 "name": graph_name,
-                "x": x.tolist(),
-                "y": y.tolist(),
+                "data": graph,
             }
         )
 
     def write(self: Self) -> None:
         self.experiment_path.mkdir(parents=True, exist_ok=True)
 
-        filename = f"run_{datetime.now():%Y_%m_%d__%H_%M_%S}.json"
+        filename = f"run_{datetime.now():%Y_%m_%d__%H_%M_%S}.pickle"
 
-        with open(self.experiment_path / filename, "wt+") as f:
-            json.dump(self.data, f)
+        with open(self.experiment_path / filename, "wb+") as f:
+            pickle.dump(self.data, f, pickle.HIGHEST_PROTOCOL)

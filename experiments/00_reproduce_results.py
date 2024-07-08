@@ -5,13 +5,14 @@ from utils import num_parameters, suggest_KAN_architecture, suggest_MLP_architec
 from utils.io import ExperimentWriter
 from utils.models import MLP
 from pathlib import Path
+from matplotlib import pyplot as plt
 
 
 EXPERIMENT_NAME = Path(__file__).stem
 
-NUM_PEAKS = 10
+NUM_PEAKS = 5
 NUM_POINTS = 500
-GAUSSIAN_STD = 5
+GAUSSIAN_STD = 0.2
 
 NUM_PARAMETERS = 5_000
 
@@ -62,7 +63,9 @@ def main() -> None:
     writer = ExperimentWriter(EXPERIMENT_NAME)
 
     X, Y = create_dataset(device)
-    writer.log_graph("training_data", X, Y)
+    fig, ax = plt.subplots()
+    ax.plot(X.cpu(), Y.cpu())
+    writer.log_graph("training_function", fig)
 
 
     writer.write()
