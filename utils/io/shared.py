@@ -6,6 +6,7 @@ EXPERIMENT_ROOT = Path(__file__).parents[2] / "results"
 
 class LogType(Enum):
     graph = 0
+    data = 1
 
 
 def get_experiments() -> list[str]:
