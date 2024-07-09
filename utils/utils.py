@@ -1,7 +1,8 @@
 import math
+from typing import Callable
+
 import torch as T
 from torch import nn, optim
-from typing import Callable
 
 
 def suggest_MLP_architecture(
