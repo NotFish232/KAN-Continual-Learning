@@ -32,7 +32,7 @@ KAN_ARCHITECTURE, KAN_GRID_SIZE = suggest_KAN_architecture(
 )
 
 
-def guassian(x: T.Tensor, mean: float, std: float) -> T.Tensor:
+def gaussian(x: T.Tensor, mean: float, std: float) -> T.Tensor:
     return T.exp(-((x - mean) ** 2) / (2 * std**2))
 
 
@@ -40,7 +40,7 @@ def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
     x = T.linspace(0, NUM_PEAKS, NUM_POINTS, device=device).unsqueeze(1)
     y = T.zeros_like(x)
     for i in range(NUM_PEAKS):
-        y += guassian(x, i + 0.5, GAUSSIAN_STD)
+        y += gaussian(x, i + 0.5, GAUSSIAN_STD)
 
     return x, y
 
