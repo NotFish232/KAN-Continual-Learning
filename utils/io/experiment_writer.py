@@ -29,6 +29,15 @@ class ExperimentWriter:
             }
         )
 
+    def log_data(self: Self, data_name: str, data: T.Tensor) -> None:
+        self.data.append(
+            {
+                "type": LogType.data,
+                "name": data_name,
+                "data": data.cpu(),
+            }
+        )
+
     def write(self: Self) -> None:
         self.experiment_path.mkdir(parents=True, exist_ok=True)
 

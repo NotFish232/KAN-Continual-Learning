@@ -72,6 +72,8 @@ def main() -> None:
 
     X, Y = create_dataset(device)
     X_partitioned, Y_partitioned = create_partitioned_dataset(device)
+    writer.log_data("X", X)
+    writer.log_data("Y", Y)
 
     fig, ax = plt.subplots()
     ax.plot(X.cpu(), Y.cpu(), color="black")

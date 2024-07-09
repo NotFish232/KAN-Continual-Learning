@@ -10,10 +10,22 @@ def main():
         st.write(f"### {experiment}")
 
         for entry in reader.read():
-            if entry["type"] == LogType.graph:
-                st.write(f"graph: {entry['name']}")
-                st.pyplot(entry["data"])
+            name, type, data = entry["name"], entry["type"], entry["data"]
+
+            if type == LogType.graph:
+                st.write(f"graph: {name}")
+                st.pyplot(data)
                 st.write("\n")
+            
+            if type == LogType.data:
+                st.write(f"graph: {name}")
+                st.write(data.shape)
+                with st.expander("View Data"):
+                    st.write(str(data))
+                st.write("\n")
+            
+
+            
 
 
 if __name__ == "__main__":
