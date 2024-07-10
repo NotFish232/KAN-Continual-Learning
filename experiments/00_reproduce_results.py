@@ -85,6 +85,11 @@ def main() -> None:
         ax[i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
     writer.log_graph("partitioned_function", fig)
 
+
+    kan_train_loss = []
+    kan_test_loss = []
+    mlp_train_loss = []
+    mlp_test_loss = []
     kan_preds = []
     mlp_preds = []
 
@@ -94,22 +99,32 @@ def main() -> None:
         dataset = {
             "train_input": x,
             "train_label": y,
-            "test_input": x,
-            "test_label": y,
+            "test_input": X,
+            "test_label": Y,
         }
 
-        kan.train(
+        kan_results = kan.train(
             dataset,
             steps=NUM_EPOCHS,
             device=device,
             update_grid=False,
             disable_pbar=True,
         )
-        train_model(mlp, dataset, NUM_EPOCHS)
+        mlp_results = train_model(mlp, dataset, NUM_EPOCHS)
+
+        kan_train_loss.extend(kan_results["train_loss"])
+        kan_test_loss.extend(kan_results["test_loss"])
+        mlp_train_loss.extend(mlp_results["train_loss"])
+        mlp_test_loss.extend(mlp_results["test_loss"])
+
 
         with T.no_grad():
             kan_preds.append(kan(X))
             mlp_preds.append(mlp(X))
+
+    fig, ax = plt.subplots()
+    ax.plot(T.arange(0, len(kan_train_loss)), kan_train_loss, color="black")
+    writer.log_graph("loss", fig)
 
     fig, ax = plt.subplots(3, NUM_PEAKS, figsize=(15, 2))
     for i, (kan_pred, mlp_pred) in enumerate(zip(kan_preds, mlp_preds)):
