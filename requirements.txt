@@ -9,6 +9,7 @@ scikit-learn==1.5.0
 streamlit==1.36.0
 natsort==8.4.0
 ipykernel==6.29.5
+plotly==5.22.0
 
 # custom version of pykan
 -e ./pykan_editable

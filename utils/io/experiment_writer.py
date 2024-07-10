@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any
 
 import torch as T
-from matplotlib.figure import Figure
+from plotly import graph_objects as go  # type: ignore
 from typing_extensions import Self
 
 from .shared import EXPERIMENT_ROOT, LogType
@@ -20,7 +20,7 @@ class ExperimentWriter:
 
         self.data: list[dict[str, Any]] = []
 
-    def log_graph(self: Self, graph_name: str, graph: Figure) -> None:
+    def log_graph(self: Self, graph_name: str, graph: go.Figure ) -> None:
         self.data.append(
             {
                 "type": LogType.graph,

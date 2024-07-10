@@ -14,7 +14,7 @@ def main():
 
             if type == LogType.graph:
                 st.write(f"graph: {name}")
-                st.pyplot(data)
+                st.plotly_chart(data)
                 st.write("\n")
             
             if type == LogType.data:

@@ -1,8 +1,11 @@
 from pathlib import Path
 
+import plotly as pt  # type: ignore
 import torch as T
 from kan import KAN
-from matplotlib import pyplot as plt
+from plotly import express as px  # type: ignore
+from plotly import graph_objects as go
+from plotly.subplots import make_subplots  # type: ignore
 from tqdm import tqdm
 
 from utils import suggest_KAN_architecture, suggest_MLP_architecture, train_model
@@ -75,16 +78,15 @@ def main() -> None:
     writer.log_data("X", X)
     writer.log_data("Y", Y)
 
-    fig, ax = plt.subplots()
-    ax.plot(X.cpu(), Y.cpu(), color="black")
-    writer.log_graph("training_function", fig)
+    plot = px.line(x=X.squeeze(1).cpu(), y=Y.squeeze(1).cpu(), range_y=[-0.25, 1.25])
+    writer.log_graph("training_function", plot)
 
-    fig, ax = plt.subplots(1, NUM_PEAKS, figsize=(15, 2))
+    plot = make_subplots(rows=1, cols=NUM_PEAKS)
     for i, (x, y) in enumerate(zip(X_partitioned, Y_partitioned)):
-        ax[i].plot(x.cpu(), y.cpu(), color="black")
-        ax[i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
-    writer.log_graph("partitioned_function", fig)
-
+        sub_plot = px.line(x=x.squeeze(1).cpu(), y=y.squeeze(1).cpu())
+        for trace in sub_plot.data:
+            plot.add_trace(trace, row=1, col=i + 1)
+    writer.log_graph("partitioned_function", plot)
 
     kan_train_loss = []
     kan_test_loss = []
@@ -117,30 +119,29 @@ def main() -> None:
         mlp_train_loss.extend(mlp_results["train_loss"])
         mlp_test_loss.extend(mlp_results["test_loss"])
 
-
         with T.no_grad():
             kan_preds.append(kan(X))
             mlp_preds.append(mlp(X))
 
-    fig, ax = plt.subplots()
-    ax.plot(T.arange(0, len(kan_train_loss)), kan_train_loss, color="black")
-    writer.log_graph("loss", fig)
+    # fig, ax = plt.subplots()
+    # ax.plot(T.arange(0, len(kan_train_loss)), kan_train_loss, color="black")
+    # writer.log_graph("loss", fig)
 
-    fig, ax = plt.subplots(3, NUM_PEAKS, figsize=(15, 2))
-    for i, (kan_pred, mlp_pred) in enumerate(zip(kan_preds, mlp_preds)):
-        ax[0][i].plot(X_partitioned[i].cpu(), Y_partitioned[i].cpu(), color="black")
-        ax[0][i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
-        ax[0][i].set_ylim(-0.5, 1.5)
+    # fig, ax = plt.subplots(3, NUM_PEAKS, figsize=(15, 2))
+    # for i, (kan_pred, mlp_pred) in enumerate(zip(kan_preds, mlp_preds)):
+    #     ax[0][i].plot(X_partitioned[i].cpu(), Y_partitioned[i].cpu(), color="black")
+    #     ax[0][i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
+    #     ax[0][i].set_ylim(-0.5, 1.5)
 
-        ax[1][i].plot(X.cpu(), kan_pred.cpu(), color="black")
-        ax[1][i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
-        ax[1][i].set_ylim(-0.5, 1.5)
+    #     ax[1][i].plot(X.cpu(), kan_pred.cpu(), color="black")
+    #     ax[1][i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
+    #     ax[1][i].set_ylim(-0.5, 1.5)
 
-        ax[2][i].plot(X.cpu(), mlp_pred.cpu(), color="black")
-        ax[2][i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
-        ax[2][i].set_ylim(-0.5, 1.5)
+    #     ax[2][i].plot(X.cpu(), mlp_pred.cpu(), color="black")
+    #     ax[2][i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
+    #     ax[2][i].set_ylim(-0.5, 1.5)
 
-    writer.log_graph("training_graphs", fig)
+    # writer.log_graph("training_graphs", fig)
 
     writer.write()
 
