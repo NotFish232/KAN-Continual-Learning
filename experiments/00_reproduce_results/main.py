@@ -3,16 +3,18 @@ from pathlib import Path
 import plotly as pt  # type: ignore
 import torch as T
 from kan import KAN
-from plotly import express as px  # type: ignore
-from plotly import graph_objects as go
-from plotly.subplots import make_subplots  # type: ignore
 from tqdm import tqdm
 
-from utils import suggest_KAN_architecture, suggest_MLP_architecture, train_model
+from utils import (
+    suggest_KAN_architecture,
+    suggest_MLP_architecture,
+    train_model,
+    plot_on_subplot,
+)
 from utils.io import ExperimentWriter
 from utils.models import MLP
 
-EXPERIMENT_NAME = Path(__file__).stem
+EXPERIMENT_NAME = Path(__file__).parent.name
 
 NUM_PEAKS = 5
 NUM_POINTS = 500
@@ -50,10 +52,10 @@ def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
 
 def create_partitioned_dataset(
     device: T.device,
-) -> tuple[list[T.Tensor], list[T.Tensor]]:
+) -> tuple[T.Tensor, T.Tensor]:
     X, Y = create_dataset(device)
-    partitioned_X = T.chunk(X, NUM_PEAKS)
-    partitioned_Y = T.chunk(Y, NUM_PEAKS)
+    partitioned_X = T.cat([x.unsqueeze(0) for x in T.chunk(X, NUM_PEAKS)])
+    partitioned_Y = T.cat([y.unsqueeze(0) for y in T.chunk(Y, NUM_PEAKS)])
 
     return partitioned_X, partitioned_Y
 
@@ -75,25 +77,18 @@ def main() -> None:
 
     X, Y = create_dataset(device)
     X_partitioned, Y_partitioned = create_partitioned_dataset(device)
-    writer.log_data("X", X)
-    writer.log_data("Y", Y)
+    writer.log("X", X)
+    writer.log("Y", Y)
+    writer.log("X_partitioned", X_partitioned)
+    writer.log("Y_partitioned", Y_partitioned)
 
-    plot = px.line(x=X.squeeze(1).cpu(), y=Y.squeeze(1).cpu(), range_y=[-0.25, 1.25])
-    writer.log_graph("training_function", plot)
 
-    plot = make_subplots(rows=1, cols=NUM_PEAKS)
-    for i, (x, y) in enumerate(zip(X_partitioned, Y_partitioned)):
-        sub_plot = px.line(x=x.squeeze(1).cpu(), y=y.squeeze(1).cpu())
-        for trace in sub_plot.data:
-            plot.add_trace(trace, row=1, col=i + 1)
-    writer.log_graph("partitioned_function", plot)
-
-    kan_train_loss = []
-    kan_test_loss = []
-    mlp_train_loss = []
-    mlp_test_loss = []
     kan_preds = []
     mlp_preds = []
+    kan_train_loss: list[float] = []
+    kan_test_loss: list[float] = []
+    mlp_train_loss: list[float] = []
+    mlp_test_loss: list[float] = []
 
     for i, (x, y) in tqdm(
         enumerate(zip(X_partitioned, Y_partitioned)), total=NUM_PEAKS
@@ -114,34 +109,21 @@ def main() -> None:
         )
         mlp_results = train_model(mlp, dataset, NUM_EPOCHS)
 
-        kan_train_loss.extend(kan_results["train_loss"])
-        kan_test_loss.extend(kan_results["test_loss"])
-        mlp_train_loss.extend(mlp_results["train_loss"])
-        mlp_test_loss.extend(mlp_results["test_loss"])
+        kan_train_loss.extend(l.item() for l in kan_results["train_loss"])
+        kan_test_loss.extend(l.item() for l in kan_results["test_loss"])
+        mlp_train_loss.extend(l.item() for l in mlp_results["train_loss"])
+        mlp_test_loss.extend(l.item() for l in mlp_results["test_loss"])
 
         with T.no_grad():
             kan_preds.append(kan(X))
             mlp_preds.append(mlp(X))
 
-    # fig, ax = plt.subplots()
-    # ax.plot(T.arange(0, len(kan_train_loss)), kan_train_loss, color="black")
-    # writer.log_graph("loss", fig)
-
-    # fig, ax = plt.subplots(3, NUM_PEAKS, figsize=(15, 2))
-    # for i, (kan_pred, mlp_pred) in enumerate(zip(kan_preds, mlp_preds)):
-    #     ax[0][i].plot(X_partitioned[i].cpu(), Y_partitioned[i].cpu(), color="black")
-    #     ax[0][i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
-    #     ax[0][i].set_ylim(-0.5, 1.5)
-
-    #     ax[1][i].plot(X.cpu(), kan_pred.cpu(), color="black")
-    #     ax[1][i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
-    #     ax[1][i].set_ylim(-0.5, 1.5)
-
-    #     ax[2][i].plot(X.cpu(), mlp_pred.cpu(), color="black")
-    #     ax[2][i].plot(X.cpu(), Y.cpu(), color="black", alpha=0.1)
-    #     ax[2][i].set_ylim(-0.5, 1.5)
-
-    # writer.log_graph("training_graphs", fig)
+    writer.log("kan_preds", T.cat([p.unsqueeze(0) for p in kan_preds]))
+    writer.log("mlp_preds", T.cat([p.unsqueeze(0) for p in mlp_preds]))
+    writer.log("kan_train_loss", T.tensor(kan_train_loss))
+    writer.log("kan_test_loss", T.tensor(kan_test_loss))
+    writer.log("mlp_train_loss", T.tensor(mlp_train_loss))
+    writer.log("mlp_test_loss", T.tensor(mlp_test_loss))
 
     writer.write()
 

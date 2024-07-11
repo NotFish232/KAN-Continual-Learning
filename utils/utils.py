@@ -4,6 +4,7 @@ from typing import Any, Callable
 import torch as T
 from torch import nn, optim
 from torch.nn import functional as F
+from plotly import graph_objects as go  # type: ignore
 
 
 def suggest_MLP_architecture(
@@ -78,3 +79,9 @@ def train_model(
             results["test_loss"].append(T.sqrt(F.mse_loss(model(X_test), Y_test)))
 
     return results
+
+
+def plot_on_subplot(plot: go.Figure, pos: tuple[int, int], *subplots: go.Figure) -> None:
+    for subplot in subplots:
+        for figure in subplot.data:
+            plot.add_trace(figure, pos[0], pos[1])

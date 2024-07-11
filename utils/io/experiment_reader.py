@@ -1,10 +1,10 @@
 import pickle
-from typing import Any, Generator
 
 from natsort import natsorted
 from typing_extensions import Self
 
 from .shared import EXPERIMENT_ROOT
+import torch as T
 
 
 class ExperimentReader:
@@ -13,13 +13,11 @@ class ExperimentReader:
         self.experiment_path = EXPERIMENT_ROOT / experiment_name
         self.filename = natsorted(self.experiment_path.iterdir())[-1]
 
-        self.data: list[dict[str, Any]] = []
+        self.data: dict[str, T.Tensor] = {}
 
-    def read(self: Self) -> Generator[dict[str, Any], None, None]:
+    def read(self: Self) -> None:
         with open(self.experiment_path / self.filename, "rb") as f:
             self.data = pickle.load(f)
-        
-        yield from self.data
 
     
 
