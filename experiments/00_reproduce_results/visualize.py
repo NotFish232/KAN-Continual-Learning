@@ -1,8 +1,10 @@
+from pathlib import Path
+
+import torch as T
 from plotly import express as px  # type: ignore
 from plotly import graph_objects as go
 from plotly.subplots import make_subplots  # type: ignore
-from pathlib import Path
-import torch as T
+
 from utils import plot_on_subplot
 
 EXPERIMENT_NAME = Path(__file__).parent.name

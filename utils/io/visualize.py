@@ -1,6 +1,6 @@
 import streamlit as st
 
-from utils.io import ExperimentReader, get_experiments, get_experiment_plots
+from utils.io import ExperimentReader, get_experiment_plots, get_experiments
 
 
 def main():

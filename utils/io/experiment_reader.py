@@ -1,10 +1,10 @@
 import pickle
 
+import torch as T
 from natsort import natsorted
 from typing_extensions import Self
 
 from .shared import EXPERIMENT_ROOT
-import torch as T
 
 
 class ExperimentReader:

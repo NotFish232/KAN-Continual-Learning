@@ -6,10 +6,10 @@ from kan import KAN
 from tqdm import tqdm
 
 from utils import (
+    plot_on_subplot,
     suggest_KAN_architecture,
     suggest_MLP_architecture,
     train_model,
-    plot_on_subplot,
 )
 from utils.io import ExperimentWriter
 from utils.models import MLP

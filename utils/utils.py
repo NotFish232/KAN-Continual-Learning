@@ -2,9 +2,9 @@ import math
 from typing import Any, Callable
 
 import torch as T
+from plotly import graph_objects as go  # type: ignore
 from torch import nn, optim
 from torch.nn import functional as F
-from plotly import graph_objects as go  # type: ignore
 
 
 def suggest_MLP_architecture(
