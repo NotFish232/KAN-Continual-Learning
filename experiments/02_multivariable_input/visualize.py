@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import math
 import torch as T
 from plotly import express as px  # type: ignore
 from plotly import graph_objects as go
@@ -24,33 +25,33 @@ def create_plots(experiment_data: dict[str, T.Tensor]) -> dict[str, go.Figure]:
 
     NUM_PEAKS = X_partitioned.shape[0]
 
-    function_plot = px.line(x=X.squeeze(), y=Y.squeeze(), range_y=[-0.25, 2.5])
+    function_plot = go.Figure([go.Surface(z=Y.reshape(int(math.sqrt(Y.shape[0])), -1))])
 
-    predictions_plot = make_subplots(rows=3, cols=NUM_PEAKS)
+    # predictions_plot = make_subplots(rows=3, cols=NUM_PEAKS)
 
-    predictions_plot.update_xaxes(showticklabels=False)
-    predictions_plot.update_yaxes(showticklabels=False, range=[-0.25, 2.5])
-    for i, (kan_pred, mlp_pred) in enumerate(zip(kan_preds, mlp_preds)):
-        plot_on_subplot(
-            predictions_plot,
-            (1, i + 1),
-            px.line(x=X_partitioned[i].squeeze(), y=Y_partitioned[i].squeeze()),
-            px.line(x=X.squeeze(), y=Y.squeeze(), range_y=[0, 2]).update_traces(
-                opacity=0.1
-            ),
-        )
-        plot_on_subplot(
-            predictions_plot,
-            (2, i + 1),
-            px.line(x=X.squeeze(), y=kan_pred.squeeze()),
-            px.line(x=X.squeeze(), y=Y.squeeze()).update_traces(opacity=0.1),
-        )
-        plot_on_subplot(
-            predictions_plot,
-            (3, i + 1),
-            px.line(x=X.squeeze(), y=mlp_pred.squeeze()),
-            px.line(x=X.squeeze(), y=Y.squeeze()).update_traces(opacity=0.1),
-        )
+    # predictions_plot.update_xaxes(showticklabels=False)
+    # predictions_plot.update_yaxes(showticklabels=False, range=[-0.25, 2.5])
+    # for i, (kan_pred, mlp_pred) in enumerate(zip(kan_preds, mlp_preds)):
+    #     plot_on_subplot(
+    #         predictions_plot,
+    #         (1, i + 1),
+    #         px.line(x=X_partitioned[i].squeeze(), y=Y_partitioned[i].squeeze()),
+    #         px.line(x=X.squeeze(), y=Y.squeeze(), range_y=[0, 2]).update_traces(
+    #             opacity=0.1
+    #         ),
+    #     )
+    #     plot_on_subplot(
+    #         predictions_plot,
+    #         (2, i + 1),
+    #         px.line(x=X.squeeze(), y=kan_pred.squeeze()),
+    #         px.line(x=X.squeeze(), y=Y.squeeze()).update_traces(opacity=0.1),
+    #     )
+    #     plot_on_subplot(
+    #         predictions_plot,
+    #         (3, i + 1),
+    #         px.line(x=X.squeeze(), y=mlp_pred.squeeze()),
+    #         px.line(x=X.squeeze(), y=Y.squeeze()).update_traces(opacity=0.1),
+    #     )
 
     kan_train_plot = go.Figure(
         [
@@ -87,7 +88,6 @@ def create_plots(experiment_data: dict[str, T.Tensor]) -> dict[str, go.Figure]:
 
     return {
         "Function": function_plot,
-        "Predictions": predictions_plot,
         "KAN Plot": kan_train_plot,
         "MLP Plot": mlp_train_plot,
     }
