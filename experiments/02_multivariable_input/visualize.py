@@ -1,6 +1,6 @@
+import math
 from pathlib import Path
 
-import math
 import torch as T
 from plotly import express as px  # type: ignore
 from plotly import graph_objects as go
