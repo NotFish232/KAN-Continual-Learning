@@ -3,16 +3,16 @@ from pathlib import Path
 import torch as T
 from kan import KAN
 from tqdm import tqdm
-
+import math
 from utils import suggest_KAN_architecture, suggest_MLP_architecture, train_model
 from utils.io import ExperimentWriter
 from utils.models import MLP
 
 EXPERIMENT_NAME = Path(__file__).parent.name
 
-NUM_PEAKS = 3
+NUM_PEAKS = 2
 LINEAR_SLOPE = 0.25
-NUM_POINTS = 99
+NUM_POINTS = 100
 GAUSSIAN_STD_1 = 0.2
 GAUSSIAN_STD_2 = 0.1
 
@@ -49,6 +49,18 @@ def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
                 gaussian(x, j + 0.5, GAUSSIAN_STD_2),
             ).sum(dim=-1, keepdim=True)
 
+    # evil permuting to create tensor that is partitioned into n square shaped domain tasks
+    xy = (
+        xy.reshape(*([int(math.sqrt(NUM_POINTS))] * 4), 2)
+        .permute(0, 2, 1, 3, 4)
+        .reshape(-1, 2)
+    )
+    z = (
+        z.reshape(*([int(math.sqrt(NUM_POINTS))] * 4), 1)
+        .permute(0, 2, 1, 3, 4)
+        .reshape(-1, 1)
+    )
+
     return xy, z
 
 
@@ -56,10 +68,10 @@ def create_partitioned_dataset(
     device: T.device,
 ) -> tuple[T.Tensor, T.Tensor]:
     X, Y = create_dataset(device)
-    partitioned_X = T.cat([x.unsqueeze(0) for x in T.chunk(X, NUM_PEAKS ** 2)])
-    partitioned_Y = T.cat([y.unsqueeze(0) for y in T.chunk(Y, NUM_PEAKS ** 2)])
+    X_partitioned = T.cat([x.unsqueeze(0) for x in T.chunk(X, NUM_PEAKS**2)])
+    Y_partitioned = T.cat([y.unsqueeze(0) for y in T.chunk(Y, NUM_PEAKS**2)])
 
-    return partitioned_X, partitioned_Y
+    return X_partitioned, Y_partitioned
 
 
 def main() -> None:

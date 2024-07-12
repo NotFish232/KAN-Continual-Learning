@@ -35,9 +35,7 @@ def create_plots(experiment_data: dict[str, T.Tensor]) -> dict[str, go.Figure]:
             predictions_plot,
             (1, i + 1),
             px.line(x=X_partitioned[i].squeeze(), y=Y_partitioned[i].squeeze()),
-            px.line(x=X.squeeze(), y=Y.squeeze(), range_y=[0, 2]).update_traces(
-                opacity=0.1
-            ),
+            px.line(x=X.squeeze(), y=Y.squeeze()).update_traces(opacity=0.1),
         )
         plot_on_subplot(
             predictions_plot,

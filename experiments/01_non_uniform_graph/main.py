@@ -50,10 +50,10 @@ def create_partitioned_dataset(
     device: T.device,
 ) -> tuple[T.Tensor, T.Tensor]:
     X, Y = create_dataset(device)
-    partitioned_X = T.cat([x.unsqueeze(0) for x in T.chunk(X, NUM_PEAKS)])
-    partitioned_Y = T.cat([y.unsqueeze(0) for y in T.chunk(Y, NUM_PEAKS)])
+    X_partitioned = T.cat([x.unsqueeze(0) for x in T.chunk(X, NUM_PEAKS)])
+    Y_partitioned = T.cat([y.unsqueeze(0) for y in T.chunk(Y, NUM_PEAKS)])
 
-    return partitioned_X, partitioned_Y
+    return X_partitioned, Y_partitioned
 
 
 def main() -> None:

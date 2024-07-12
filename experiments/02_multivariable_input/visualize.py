@@ -23,35 +23,43 @@ def create_plots(experiment_data: dict[str, T.Tensor]) -> dict[str, go.Figure]:
     mlp_train_loss = experiment_data["mlp_train_loss"]
     mlp_test_loss = experiment_data["mlp_test_loss"]
 
-    NUM_PEAKS = X_partitioned.shape[0]
+    NUM_PEAKS = int(math.sqrt(X_partitioned.shape[0]))
+    NUM_POINTS = int(math.sqrt(X.shape[0]))
+
+    X = (
+        X.reshape(*([int(math.sqrt(NUM_POINTS))] * 4), 2)
+        .permute(0, 2, 1, 3, 4)
+        .reshape(-1, 2)
+    )
+    Y = (
+        Y.reshape(*([int(math.sqrt(NUM_POINTS))] * 4), 1)
+        .permute(0, 2, 1, 3, 4)
+        .reshape(-1, 1)
+    )
+    X_partitioned = T.cat([x.unsqueeze(0) for x in T.chunk(X, NUM_PEAKS**2)])
+    Y_partitioned = T.cat([y.unsqueeze(0) for y in T.chunk(Y, NUM_PEAKS**2)])
+
 
     function_plot = go.Figure([go.Surface(z=Y.reshape(int(math.sqrt(Y.shape[0])), -1))])
 
-    # predictions_plot = make_subplots(rows=3, cols=NUM_PEAKS)
-
-    # predictions_plot.update_xaxes(showticklabels=False)
-    # predictions_plot.update_yaxes(showticklabels=False, range=[-0.25, 2.5])
-    # for i, (kan_pred, mlp_pred) in enumerate(zip(kan_preds, mlp_preds)):
-    #     plot_on_subplot(
-    #         predictions_plot,
-    #         (1, i + 1),
-    #         px.line(x=X_partitioned[i].squeeze(), y=Y_partitioned[i].squeeze()),
-    #         px.line(x=X.squeeze(), y=Y.squeeze(), range_y=[0, 2]).update_traces(
-    #             opacity=0.1
-    #         ),
-    #     )
-    #     plot_on_subplot(
-    #         predictions_plot,
-    #         (2, i + 1),
-    #         px.line(x=X.squeeze(), y=kan_pred.squeeze()),
-    #         px.line(x=X.squeeze(), y=Y.squeeze()).update_traces(opacity=0.1),
-    #     )
-    #     plot_on_subplot(
-    #         predictions_plot,
-    #         (3, i + 1),
-    #         px.line(x=X.squeeze(), y=mlp_pred.squeeze()),
-    #         px.line(x=X.squeeze(), y=Y.squeeze()).update_traces(opacity=0.1),
-    #     )
+    predictions_plot = make_subplots(
+        rows=1,
+        cols=NUM_PEAKS**2,
+        specs=[[{"type": "surface"} for _ in range(NUM_PEAKS**2)]],
+    )
+    predictions_plot.update_xaxes(showticklabels=False)
+    predictions_plot.update_yaxes(showticklabels=False, range=[-0.25, 2.5])
+    for i, (kan_pred, mlp_pred) in enumerate(zip(kan_preds, mlp_preds)):
+        plot_on_subplot(
+            predictions_plot,
+            (1, i + 1),
+            go.Figure(
+                [go.Surface(z=Y_partitioned[i].reshape(int(math.sqrt(Y.shape[0])), -1))]
+            ),
+            go.Figure(
+                [go.Surface(z=Y.reshape(int(math.sqrt(Y.shape[0])), -1), opacity=0.1)]
+            )
+        )
 
     kan_train_plot = go.Figure(
         [
@@ -88,6 +96,7 @@ def create_plots(experiment_data: dict[str, T.Tensor]) -> dict[str, go.Figure]:
 
     return {
         "Function": function_plot,
+        "Predictions": predictions_plot,
         "KAN Plot": kan_train_plot,
         "MLP Plot": mlp_train_plot,
     }
