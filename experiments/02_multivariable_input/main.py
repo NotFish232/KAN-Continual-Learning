@@ -14,22 +14,24 @@ from utils.models import MLP
 
 EXPERIMENT_NAME = Path(__file__).parent.name
 
-NUM_PEAKS = 5
-NUM_POINTS = 500
-GAUSSIAN_STD = 0.2
+NUM_PEAKS = 3
+LINEAR_SLOPE = 0.25
+NUM_POINTS = 99
+GAUSSIAN_STD_1 = 0.2
+GAUSSIAN_STD_2 = 0.5
 
 NUM_KAN_EPOCHS = 5
 NUM_MLP_EPOCHS = 500
-NUM_PARAMETERS = 100
+NUM_PARAMETERS = 1_000
 
 MLP_ARCHITECTURE = suggest_MLP_architecture(
-    num_inputs=1,
+    num_inputs=2,
     num_outputs=1,
     num_layers=3,
     num_params=NUM_PARAMETERS,
 )
 KAN_ARCHITECTURE, KAN_GRID_SIZE = suggest_KAN_architecture(
-    num_inputs=1,
+    num_inputs=2,
     num_outputs=1,
     num_layers=1,
     num_params=NUM_PARAMETERS,
@@ -41,20 +43,25 @@ def gaussian(x: T.Tensor, mean: float, std: float) -> T.Tensor:
 
 
 def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
-    x = T.linspace(0, NUM_PEAKS, NUM_POINTS, device=device).unsqueeze(1)
-    y = T.zeros_like(x)
+    x = T.linspace(0, NUM_PEAKS, NUM_POINTS, device=device)
+    xy = T.cartesian_prod(x, x)
+    z = T.zeros((NUM_POINTS**2, 1), device=device)
     for i in range(NUM_PEAKS):
-        y += gaussian(x, i + 0.5, GAUSSIAN_STD)
+        for j in range(NUM_PEAKS):
+            z += T.cartesian_prod(
+                gaussian(x, i + 0.5, GAUSSIAN_STD_1),
+                gaussian(x, j + 0.5, GAUSSIAN_STD_2),
+            ).sum(dim=-1, keepdim=True)
 
-    return x, y
+    return xy, z
 
 
 def create_partitioned_dataset(
     device: T.device,
 ) -> tuple[T.Tensor, T.Tensor]:
     X, Y = create_dataset(device)
-    partitioned_X = T.cat([x.unsqueeze(0) for x in T.chunk(X, NUM_PEAKS)])
-    partitioned_Y = T.cat([y.unsqueeze(0) for y in T.chunk(Y, NUM_PEAKS)])
+    partitioned_X = T.cat([x.unsqueeze(0) for x in T.chunk(X, NUM_PEAKS ** 2)])
+    partitioned_Y = T.cat([y.unsqueeze(0) for y in T.chunk(Y, NUM_PEAKS ** 2)])
 
     return partitioned_X, partitioned_Y
 
@@ -81,7 +88,6 @@ def main() -> None:
     writer.log("X_partitioned", X_partitioned)
     writer.log("Y_partitioned", Y_partitioned)
 
-
     kan_preds = []
     mlp_preds = []
     kan_train_loss: list[float] = []
@@ -90,7 +96,7 @@ def main() -> None:
     mlp_test_loss: list[float] = []
 
     for i, (x, y) in tqdm(
-        enumerate(zip(X_partitioned, Y_partitioned)), total=NUM_PEAKS
+        enumerate(zip(X_partitioned, Y_partitioned)), total=NUM_PEAKS**2
     ):
         dataset = {
             "train_input": x,

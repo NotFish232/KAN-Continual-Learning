@@ -24,12 +24,12 @@ def create_plots(experiment_data: dict[str, T.Tensor]) -> dict[str, go.Figure]:
 
     NUM_PEAKS = X_partitioned.shape[0]
 
-    function_plot = px.line(x=X.squeeze(), y=Y.squeeze(), range_y=[-0.25, 1.25])
+    function_plot = px.line(x=X.squeeze(), y=Y.squeeze(), range_y=[-0.25, 2.5])
 
     predictions_plot = make_subplots(rows=3, cols=NUM_PEAKS)
 
     predictions_plot.update_xaxes(showticklabels=False)
-    predictions_plot.update_yaxes(showticklabels=False, range=[-0.25, 1.25])
+    predictions_plot.update_yaxes(showticklabels=False, range=[-0.25, 2.5])
     for i, (kan_pred, mlp_pred) in enumerate(zip(kan_preds, mlp_preds)):
         plot_on_subplot(
             predictions_plot,
