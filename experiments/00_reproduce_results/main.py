@@ -4,7 +4,12 @@ import torch as T
 from kan import KAN
 from tqdm import tqdm
 
-from utils import suggest_KAN_architecture, suggest_MLP_architecture, train_model
+from utils import (
+    suggest_KAN_architecture,
+    suggest_MLP_architecture,
+    train_model,
+    gaussian,
+)
 from utils.io import ExperimentWriter
 from utils.models import MLP
 
@@ -30,10 +35,6 @@ KAN_ARCHITECTURE, KAN_GRID_SIZE = suggest_KAN_architecture(
     num_layers=1,
     num_params=NUM_PARAMETERS,
 )
-
-
-def gaussian(x: T.Tensor, mean: float, std: float) -> T.Tensor:
-    return T.exp(-((x - mean) ** 2) / (2 * std**2))
 
 
 def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
@@ -76,7 +77,6 @@ def main() -> None:
     writer.log("Y", Y)
     writer.log("X_partitioned", X_partitioned)
     writer.log("Y_partitioned", Y_partitioned)
-
 
     kan_preds = []
     mlp_preds = []

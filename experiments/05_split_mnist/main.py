@@ -3,57 +3,42 @@ from pathlib import Path
 import torch as T
 from kan import KAN
 from tqdm import tqdm
-
-from utils import (
-    suggest_KAN_architecture,
-    suggest_MLP_architecture,
-    train_model,
-    gaussian,
-)
+import pandas as pd
+from utils import suggest_KAN_architecture, suggest_MLP_architecture, train_model
 from utils.io import ExperimentWriter
 from utils.models import MLP
 
 EXPERIMENT_NAME = Path(__file__).parent.name
 
-NUM_PEAKS = 5
-NUM_POINTS = 500
-GAUSSIAN_STD = 0.2
+MNIST_TRAIN_PATH = "./data/MNIST/mnist_train.csv"
+MNIST_TEST_PATH = "./data/MNIST/mnist_test.csv"
+
+
+IMG_SIZE = 28
+
 
 NUM_KAN_EPOCHS = 5
 NUM_MLP_EPOCHS = 500
-NUM_PARAMETERS = 1_000
+NUM_PARAMETERS = 10_000
 
 MLP_ARCHITECTURE = suggest_MLP_architecture(
-    num_inputs=1,
-    num_outputs=1,
-    num_layers=3,
+    num_inputs=IMG_SIZE**2,
+    num_outputs=10,
+    num_layers=4,
     num_params=NUM_PARAMETERS,
 )
 KAN_ARCHITECTURE, KAN_GRID_SIZE = suggest_KAN_architecture(
-    num_inputs=1,
-    num_outputs=1,
+    num_inputs=IMG_SIZE**2,
+    num_outputs=10,
     num_layers=2,
     num_params=NUM_PARAMETERS,
 )
 
 
-def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
-    x = T.linspace(0, NUM_PEAKS, NUM_POINTS, device=device).unsqueeze(1)
-    y = T.zeros_like(x)
-    for i in range(NUM_PEAKS):
-        y += gaussian(x, i + 0.5, GAUSSIAN_STD)
+def load_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
+    train_dataset = pd.read_csv(MNIST_TRAIN_PATH)
+    test_dataset = pd.read_csv(MNIST_TEST_PATH)
 
-    return x, y
-
-
-def create_partitioned_dataset(
-    device: T.device,
-) -> tuple[T.Tensor, T.Tensor]:
-    X, Y = create_dataset(device)
-    X_partitioned = T.cat([x.unsqueeze(0) for x in T.chunk(X, NUM_PEAKS)])
-    Y_partitioned = T.cat([y.unsqueeze(0) for y in T.chunk(Y, NUM_PEAKS)])
-
-    return X_partitioned, Y_partitioned
 
 
 def main() -> None:
@@ -61,17 +46,14 @@ def main() -> None:
     kan = KAN(
         KAN_ARCHITECTURE,
         KAN_GRID_SIZE,
-        grid_range=[0, NUM_PEAKS],
-        bias_trainable=False,
-        sp_trainable=False,
-        sb_trainable=False,
         device=device,
     )
     mlp = MLP(MLP_ARCHITECTURE).to(device)
 
     writer = ExperimentWriter(EXPERIMENT_NAME)
 
-    X, Y = create_dataset(device)
+    X, Y = load_dataset(device)
+    exit(1)
     X_partitioned, Y_partitioned = create_partitioned_dataset(device)
     writer.log("X", X)
     writer.log("Y", Y)

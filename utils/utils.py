@@ -81,7 +81,13 @@ def train_model(
     return results
 
 
-def plot_on_subplot(plot: go.Figure, pos: tuple[int, int], *subplots: go.Figure) -> None:
+def plot_on_subplot(
+    plot: go.Figure, pos: tuple[int, int], *subplots: go.Figure
+) -> None:
     for subplot in subplots:
         for figure in subplot.data:
             plot.add_trace(figure, pos[0], pos[1])
+
+
+def gaussian(x: T.Tensor, mean: float, std: float) -> T.Tensor:
+    return T.exp(-((x - mean) ** 2) / (2 * std**2))
