@@ -1,9 +1,10 @@
+import math
 from pathlib import Path
 
 import torch as T
 from kan import KAN
 from tqdm import tqdm
-import math
+
 from utils import suggest_KAN_architecture, suggest_MLP_architecture, train_model
 from utils.io import ExperimentWriter
 from utils.models import MLP
