@@ -2,7 +2,6 @@ import math
 from pathlib import Path
 
 import torch as T
-from plotly import express as px  # type: ignore
 from plotly import graph_objects as go
 from plotly.subplots import make_subplots  # type: ignore
 
@@ -26,26 +25,20 @@ def create_plots(experiment_data: dict[str, T.Tensor]) -> dict[str, go.Figure]:
     NUM_PEAKS = int(math.sqrt(X_partitioned.shape[0]))
     NUM_POINTS = int(math.sqrt(X.shape[0]))
 
-    X = (
-        X.reshape(*([int(math.sqrt(NUM_POINTS))] * 4), 2)
-        .permute(0, 2, 1, 3, 4)
-        .reshape(-1, 2)
-    )
-    Y = (
+    Y_graphable = (
         Y.reshape(*([int(math.sqrt(NUM_POINTS))] * 4), 1)
         .permute(0, 2, 1, 3, 4)
         .reshape(-1, 1)
     )
-    X_partitioned = T.cat([x.unsqueeze(0) for x in T.chunk(X, NUM_PEAKS**2)])
-    Y_partitioned = T.cat([y.unsqueeze(0) for y in T.chunk(Y, NUM_PEAKS**2)])
 
-
-    function_plot = go.Figure([go.Surface(z=Y.reshape(int(math.sqrt(Y.shape[0])), -1))])
+    function_plot = go.Figure(
+        [go.Surface(z=Y_graphable.reshape(NUM_POINTS, NUM_POINTS))]
+    )
 
     predictions_plot = make_subplots(
-        rows=1,
+        rows=2,
         cols=NUM_PEAKS**2,
-        specs=[[{"type": "surface"} for _ in range(NUM_PEAKS**2)]],
+        specs=[[{"type": "surface"} for _ in range(NUM_PEAKS**2)] for _ in range(2)],
     )
     predictions_plot.update_xaxes(showticklabels=False)
     predictions_plot.update_yaxes(showticklabels=False, range=[-0.25, 2.5])
@@ -54,11 +47,47 @@ def create_plots(experiment_data: dict[str, T.Tensor]) -> dict[str, go.Figure]:
             predictions_plot,
             (1, i + 1),
             go.Figure(
-                [go.Surface(z=Y_partitioned[i].reshape(int(math.sqrt(Y.shape[0])), -1))]
+                [
+                    go.Surface(
+                        z=kan_pred.reshape(*([int(math.sqrt(NUM_POINTS))] * 4), 1)
+                        .permute(0, 2, 1, 3, 4)
+                        .reshape(NUM_POINTS, NUM_POINTS),
+                        showscale=False,
+                    )
+                ]
             ),
             go.Figure(
-                [go.Surface(z=Y.reshape(int(math.sqrt(Y.shape[0])), -1), opacity=0.1)]
-            )
+                [
+                    go.Surface(
+                        z=Y_graphable.reshape(NUM_POINTS, NUM_POINTS),
+                        opacity=0.1,
+                        showscale=False,
+                    )
+                ]
+            ),
+        )
+        plot_on_subplot(
+            predictions_plot,
+            (2, i + 1),
+            go.Figure(
+                [
+                    go.Surface(
+                        z=mlp_pred.reshape(*([int(math.sqrt(NUM_POINTS))] * 4), 1)
+                        .permute(0, 2, 1, 3, 4)
+                        .reshape(NUM_POINTS, NUM_POINTS),
+                        showscale=False,
+                    )
+                ]
+            ),
+            go.Figure(
+                [
+                    go.Surface(
+                        z=Y_graphable.reshape(NUM_POINTS, NUM_POINTS),
+                        opacity=0.1,
+                        showscale=False,
+                    )
+                ]
+            ),
         )
 
     kan_train_plot = go.Figure(
