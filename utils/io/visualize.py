@@ -1,18 +1,28 @@
-from pathlib import Path
+import streamlit as st
 
-import torch as T
-from plotly import graph_objects as go  # type: ignore
-from natsort import natsorted
-
-EXPERIMENT_ROOT = Path(__file__).parents[2] / "results"
+from utils.io import ExperimentReader, get_experiment_plots, get_experiments
 
 
-def get_experiments() -> list[str]:
-    return natsorted(p.name for p in Path(EXPERIMENT_ROOT).iterdir() if p.is_dir())
+def main():
+    for experiment in get_experiments():
+        reader = ExperimentReader(experiment)
+        reader.read()
 
 
-def get_experiment_plots(
-    experiment_name: str, experiment_data: dict[str, T.Tensor]
-) -> dict[str, go.Figure]:
-    experiment_visualizer = __import__(f"experiments.{experiment_name}.visualize", fromlist=[None])  # type: ignore
-    return experiment_visualizer.create_plots(experiment_data)
+        st.write(f"### {experiment}")
+
+        st.write("## Graphs")
+        plots = get_experiment_plots(experiment, reader.data)
+        for name, plot in plots.items():
+            st.write(f"Graph: {name}")
+            st.plotly_chart(plot)
+
+        st.write("## Data")
+        for name, data in reader.data.items():
+            st.write(f"{name}: {data.shape}")
+            with st.expander("View Data"):
+                st.write(str(data))
+
+        
+if __name__ == "__main__":
+    main()

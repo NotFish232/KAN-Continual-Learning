@@ -2,12 +2,13 @@ from pathlib import Path
 
 import torch as T
 from plotly import graph_objects as go  # type: ignore
+from natsort import natsorted
 
 EXPERIMENT_ROOT = Path(__file__).parents[2] / "results"
 
 
 def get_experiments() -> list[str]:
-    return [p.name for p in Path(EXPERIMENT_ROOT).iterdir() if p.is_dir()]
+    return natsorted(p.name for p in Path(EXPERIMENT_ROOT).iterdir() if p.is_dir())
 
 
 def get_experiment_plots(
