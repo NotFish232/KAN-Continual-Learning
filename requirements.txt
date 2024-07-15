@@ -5,7 +5,6 @@ tqdm==4.66.4
 matplotlib==3.9.0
 numpy==1.26.4
 pandas==2.2.2
-scikit-learn==1.5.0
 streamlit==1.36.0
 natsort==8.4.0
 ipykernel==6.29.5
@@ -13,6 +12,10 @@ plotly==5.22.0
 
 # custom version of pykan
 -e ./pykan_editable
+
+# packages for pykan
+scikit-learn==1.5.0
+pyyaml==6.0.1
 
 # Formatting
 isort==5.13.2
