@@ -14,6 +14,9 @@ plotly==5.22.0
 # custom version of pykan
 -e ./pykan_editable
 
+# Formatting
+isort==5.13.2
+
 # type stubs
 pandas-stubs==2.2.2.240603
 tqdm-stubs==0.2.1
