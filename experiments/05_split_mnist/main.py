@@ -4,8 +4,14 @@ import pandas as pd
 import torch as T
 from kan import KAN
 from tqdm import tqdm
+import numpy as np
 
-from utils import suggest_KAN_architecture, suggest_MLP_architecture, train_model
+from utils import (
+    suggest_KAN_architecture,
+    suggest_MLP_architecture,
+    train_model,
+    num_parameters,
+)
 from utils.io import ExperimentWriter
 from utils.models import MLP
 
@@ -22,18 +28,9 @@ NUM_KAN_EPOCHS = 5
 NUM_MLP_EPOCHS = 500
 NUM_PARAMETERS = 10_000
 
-MLP_ARCHITECTURE = suggest_MLP_architecture(
-    num_inputs=IMG_SIZE**2,
-    num_outputs=10,
-    num_layers=4,
-    num_params=NUM_PARAMETERS,
-)
-KAN_ARCHITECTURE, KAN_GRID_SIZE = suggest_KAN_architecture(
-    num_inputs=IMG_SIZE**2,
-    num_outputs=10,
-    num_layers=2,
-    num_params=NUM_PARAMETERS,
-)
+MLP_ARCHITECTURE = [IMG_SIZE**2, 128, 128, 64, 10]
+KAN_ARCHITECTURE = [IMG_SIZE**2, 32, 10]
+KAN_GRID_SIZE = 32
 
 
 def load_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
@@ -41,6 +38,22 @@ def load_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
     test_dataset = pd.read_csv(MNIST_TEST_PATH)
 
 
+def load_dataset(
+    dataset_path: str, device: T.device
+) -> tuple[list[T.Tensor], list[T.Tensor]]:
+    dataset = pd.read_csv(MNIST_TRAIN_PATH).to_numpy()
+    X = dataset[:, 1:].astype(np.float32) / 255
+    Y = dataset[:, :1]
+ 
+    split_X = []
+    split_Y = [] 
+
+    for i, j in zip(range(0, 10, 2), range(1, 10, 2)):
+        indices = ((Y == i) | (Y == j)).squeeze()
+        split_X.append(X[indices])
+        split_Y.append(Y[indices])
+    
+    return split_X, split_Y
 
 def main() -> None:
     device = T.device("cuda" if T.cuda.is_available() else "cpu")
@@ -52,8 +65,9 @@ def main() -> None:
     mlp = MLP(MLP_ARCHITECTURE).to(device)
 
     writer = ExperimentWriter(EXPERIMENT_NAME)
+    print(num_parameters(kan))
+    X_train, Y_train = load_dataset(MNIST_TRAIN_PATH, device)
 
-    X, Y = load_dataset(device)
     exit(1)
     X_partitioned, Y_partitioned = create_partitioned_dataset(device)
     writer.log("X", X)
