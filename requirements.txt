@@ -15,7 +15,6 @@ plotly==5.22.0
 
 # packages for pykan
 scikit-learn==1.5.0
-pyyaml==6.0.1
 
 # Formatting
 isort==5.13.2
