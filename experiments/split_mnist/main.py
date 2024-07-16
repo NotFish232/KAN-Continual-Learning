@@ -1,59 +1,54 @@
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 import torch as T
 from kan import KAN
 from tqdm import tqdm
 
-from utils import (
-    gaussian,
-    suggest_KAN_architecture,
-    suggest_MLP_architecture,
-    train_model,
-)
+from utils import num_parameters, train_model
 from utils.io import ExperimentWriter
 from utils.models import MLP
 
 EXPERIMENT_NAME = Path(__file__).parent.name
 
-NUM_PEAKS = 5
-NUM_POINTS = 500
-GAUSSIAN_STD = 0.2
+MNIST_TRAIN_PATH = "./data/MNIST/mnist_train.csv"
+MNIST_TEST_PATH = "./data/MNIST/mnist_test.csv"
 
-NUM_KAN_EPOCHS = 1
+
+IMG_SIZE = 28
+
+
+NUM_KAN_EPOCHS = 5
 NUM_MLP_EPOCHS = 500
-NUM_PARAMETERS = 100
+NUM_PARAMETERS = 10_000
 
-MLP_ARCHITECTURE = suggest_MLP_architecture(
-    num_inputs=1,
-    num_outputs=1,
-    num_layers=3,
-    num_params=NUM_PARAMETERS,
-)
-KAN_ARCHITECTURE, KAN_GRID_SIZE = suggest_KAN_architecture(
-    num_inputs=1,
-    num_outputs=1,
-    num_layers=1,
-    num_params=NUM_PARAMETERS,
-)
+MLP_ARCHITECTURE = [IMG_SIZE**2, 128, 128, 64, 10]
+KAN_ARCHITECTURE = [IMG_SIZE**2, 32, 10]
+KAN_GRID_SIZE = 32
 
 
-def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
-    x = T.linspace(0, NUM_PEAKS, NUM_POINTS, device=device).unsqueeze(1)
-    y = T.zeros_like(x)
-    for i in range(NUM_PEAKS):
-        y += gaussian(x, i + 0.5, GAUSSIAN_STD)
-
-    return x, y
+def load_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
+    train_dataset = pd.read_csv(MNIST_TRAIN_PATH)
+    test_dataset = pd.read_csv(MNIST_TEST_PATH)
 
 
-def create_partitioned_dataset(
-    device: T.device,
-) -> tuple[T.Tensor, T.Tensor]:
-    X, Y = create_dataset(device)
-    X_partitioned = T.cat([x.unsqueeze(0) for x in T.chunk(X, NUM_PEAKS)])
-    Y_partitioned = T.cat([y.unsqueeze(0) for y in T.chunk(Y, NUM_PEAKS)])
+def load_dataset(
+    dataset_path: str, device: T.device
+) -> tuple[list[T.Tensor], list[T.Tensor]]:
+    dataset = pd.read_csv(MNIST_TRAIN_PATH).to_numpy()
+    X = dataset[:, 1:].astype(np.float32) / 255
+    Y = dataset[:, :1]
 
-    return X_partitioned, Y_partitioned
+    split_X = []
+    split_Y = []
+
+    for i, j in zip(range(0, 10, 2), range(1, 10, 2)):
+        indices = ((Y == i) | (Y == j)).squeeze()
+        split_X.append(X[indices])
+        split_Y.append(Y[indices])
+
+    return split_X, split_Y
 
 
 def main() -> None:
@@ -61,17 +56,15 @@ def main() -> None:
     kan = KAN(
         KAN_ARCHITECTURE,
         KAN_GRID_SIZE,
-        grid_range=[0, NUM_PEAKS],
-        bias_trainable=False,
-        sp_trainable=False,
-        sb_trainable=False,
         device=device,
     )
     mlp = MLP(MLP_ARCHITECTURE).to(device)
 
     writer = ExperimentWriter(EXPERIMENT_NAME)
+    print(num_parameters(kan))
+    X_train, Y_train = load_dataset(MNIST_TRAIN_PATH, device)
 
-    X, Y = create_dataset(device)
+    exit(1)
     X_partitioned, Y_partitioned = create_partitioned_dataset(device)
     writer.log("X", X)
     writer.log("Y", Y)

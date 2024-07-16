@@ -2,7 +2,7 @@ import math
 from pathlib import Path
 
 import torch as T
-from plotly import graph_objects as go
+from plotly import graph_objects as go  # type: ignore
 from plotly.subplots import make_subplots  # type: ignore
 
 from utils import plot_on_subplot

@@ -13,7 +13,7 @@ class ExperimentReader:
         self.experiment_path = EXPERIMENT_ROOT / experiment_name
         self.filename = natsorted(self.experiment_path.iterdir())[-1]
 
-        self.data: dict[str, T.Tensor] = {}
+        self.data: dict[str, list[T.Tensor] | T.Tensor] = {}
 
     def read(self: Self) -> None:
         with open(self.experiment_path / self.filename, "rb") as f:

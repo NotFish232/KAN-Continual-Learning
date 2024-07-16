@@ -16,10 +16,13 @@ class ExperimentWriter:
         self.experiment_name = experiment_name
         self.experiment_path = EXPERIMENT_ROOT / experiment_name
 
-        self.data: dict[str, T.Tensor] = {}
+        self.data: dict[str, list[T.Tensor] | T.Tensor] = {}
 
-    def log(self: Self, name: str, data: T.Tensor) -> None:
-        self.data[name] = data.detach().cpu()
+    def log(self: Self, name: str, data: list[T.Tensor] | T.Tensor) -> None:
+        if isinstance(data, list):
+            self.data[name] = [d.detach().cpu() for d in data]
+        else:
+            self.data[name] = data.detach().cpu()
 
     def write(self: Self) -> None:
         self.experiment_path.mkdir(parents=True, exist_ok=True)
