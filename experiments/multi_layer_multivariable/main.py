@@ -11,7 +11,7 @@ from utils import (
     suggest_MLP_architecture,
     train_model,
 )
-from utils.io import ExperimentWriter
+from utils.data_management import ExperimentWriter
 from utils.models import MLP
 
 EXPERIMENT_NAME = Path(__file__).parent.name

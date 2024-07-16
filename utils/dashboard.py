@@ -7,7 +7,7 @@ from plotly import express as px  # type: ignore
 from plotly import graph_objects as go  # type: ignore
 from plotly.subplots import make_subplots  # type: ignore
 
-from utils.io import ExperimentReader
+from data_management import ExperimentReader # type: ignore
 
 
 def plotly_colors() -> Generator[str, None, None]:
@@ -113,7 +113,7 @@ def plot_prediction_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
 
 
 def main():
-    for experiment in ["01_reproduce_results"]:
+    for experiment in ExperimentReader.get_experiments():
         reader = ExperimentReader(experiment)
         reader.read()
 

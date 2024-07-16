@@ -5,6 +5,7 @@ from natsort import natsorted
 from typing_extensions import Self
 
 from .shared import EXPERIMENT_ROOT
+from pathlib import Path
 
 
 class ExperimentReader:
@@ -18,6 +19,12 @@ class ExperimentReader:
     def read(self: Self) -> None:
         with open(self.experiment_path / self.filename, "rb") as f:
             self.data = pickle.load(f)
+    
+    @staticmethod
+    def get_experiments() -> list[str]:
+        return natsorted(p.name for p in Path(EXPERIMENT_ROOT).iterdir() if p.is_dir())
+
+
 
     
 

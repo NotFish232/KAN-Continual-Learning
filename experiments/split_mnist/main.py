@@ -7,7 +7,7 @@ from kan import KAN
 from tqdm import tqdm
 
 from utils import num_parameters, train_model
-from utils.io import ExperimentWriter
+from utils.data_management import ExperimentWriter
 from utils.models import MLP
 
 EXPERIMENT_NAME = Path(__file__).parent.name
