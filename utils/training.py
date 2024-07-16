@@ -3,18 +3,22 @@ from typing import Callable, Type
 import torch as T
 from torch import nn, optim
 from torch.utils.data import DataLoader, Dataset
-import math
+from torch.nn import functional as F
+
+
+def RMSE_loss(input: T.Tensor, target: T.Tensor) -> T.Tensor:
+    return T.sqrt(F.mse_loss(input, target))
 
 
 def train_model(
     model: nn.Module,
     datasets: dict[str, Dataset],
-    optimizer: Type[optim.Optimizer] = optim.Adam,
-    loss_fn: Callable = nn.MSELoss(),
+    optimizer: Type[optim.Optimizer] = optim.SGD,
+    loss_fn: Callable = RMSE_loss,
     epochs: int = 200,
     lr: float = 1e-2,
     batch_size: int = 8,
-    eval_loss_fn: Callable = nn.MSELoss(),
+    eval_loss_fn: Callable = RMSE_loss,
     eval_batch_size: int = 32,
     logging_freq: int = 100,
 ) -> dict[str, list[float]]:
@@ -48,7 +52,7 @@ def train_model(
             iteration += 1
 
             if iteration % logging_freq == 0:
-                results["train"].append(math.sqrt(rolling_loss))
+                results["train"].append(rolling_loss)
 
                 with T.no_grad():
                     for name, dataloader in eval_dataloaders.items():
@@ -58,6 +62,6 @@ def train_model(
                             loss = eval_loss_fn(Y_batch, Y_pred)
                             losses.append(loss.item())
 
-                        results[name].append(math.sqrt(sum(losses) / len(losses)))
+                        results[name].append(sum(losses) / len(losses))
 
     return results
