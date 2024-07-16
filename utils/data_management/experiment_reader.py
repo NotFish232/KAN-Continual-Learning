@@ -1,11 +1,11 @@
 import pickle
+from pathlib import Path
 
 import torch as T
 from natsort import natsorted
 from typing_extensions import Self
 
 from .shared import EXPERIMENT_ROOT
-from pathlib import Path
 
 
 class ExperimentReader:

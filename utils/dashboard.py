@@ -3,11 +3,9 @@ from typing import Generator
 
 import streamlit as st
 import torch as T
-from plotly import express as px  # type: ignore
+from data_management import ExperimentReader  # type: ignore
 from plotly import graph_objects as go  # type: ignore
 from plotly.subplots import make_subplots  # type: ignore
-
-from data_management import ExperimentReader # type: ignore
 
 
 def plotly_colors() -> Generator[str, None, None]:
