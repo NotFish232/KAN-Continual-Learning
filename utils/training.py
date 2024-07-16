@@ -2,8 +2,8 @@ from typing import Callable, Type
 
 import torch as T
 from torch import nn, optim
-from torch.utils.data import DataLoader, Dataset
 from torch.nn import functional as F
+from torch.utils.data import DataLoader, Dataset
 
 
 def RMSE_loss(input: T.Tensor, target: T.Tensor) -> T.Tensor:

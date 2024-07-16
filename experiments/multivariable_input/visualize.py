@@ -14,7 +14,7 @@ def create_plots(experiment_data: dict[str, T.Tensor]) -> dict[str, go.Figure]:
     X = experiment_data["X"]
     Y = experiment_data["Y"]
     X_partitioned = experiment_data["X_partitioned"]
-    Y_partitioned = experiment_data["Y_partitioned"]
+    experiment_data["Y_partitioned"]
     kan_preds = experiment_data["kan_preds"]
     mlp_preds = experiment_data["mlp_preds"]
     kan_train_loss = experiment_data["kan_train_loss"]

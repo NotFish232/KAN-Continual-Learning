@@ -29,8 +29,8 @@ KAN_GRID_SIZE = 32
 
 
 def load_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
-    train_dataset = pd.read_csv(MNIST_TRAIN_PATH)
-    test_dataset = pd.read_csv(MNIST_TEST_PATH)
+    pd.read_csv(MNIST_TRAIN_PATH)
+    pd.read_csv(MNIST_TEST_PATH)
 
 
 def load_dataset(

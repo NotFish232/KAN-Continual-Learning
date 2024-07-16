@@ -7,8 +7,7 @@ from plotly import express as px  # type: ignore
 from plotly import graph_objects as go  # type: ignore
 from plotly.subplots import make_subplots  # type: ignore
 
-from utils import plot_on_subplot
-from utils.io import ExperimentReader, get_experiment_plots, get_experiments
+from utils.io import ExperimentReader
 
 
 def plotly_colors() -> Generator[str, None, None]:
