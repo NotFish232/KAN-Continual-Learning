@@ -3,6 +3,7 @@ from typing import Callable, Type
 import torch as T
 from torch import nn, optim
 from torch.utils.data import DataLoader, Dataset
+import math
 
 
 def train_model(
@@ -10,7 +11,7 @@ def train_model(
     datasets: dict[str, Dataset],
     optimizer: Type[optim.Optimizer] = optim.Adam,
     loss_fn: Callable = nn.MSELoss(),
-    epochs: int = 20,
+    epochs: int = 200,
     lr: float = 1e-2,
     batch_size: int = 8,
     eval_loss_fn: Callable = nn.MSELoss(),
@@ -47,7 +48,7 @@ def train_model(
             iteration += 1
 
             if iteration % logging_freq == 0:
-                results["train"].append(rolling_loss)
+                results["train"].append(math.sqrt(rolling_loss))
 
                 with T.no_grad():
                     for name, dataloader in eval_dataloaders.items():
@@ -57,6 +58,6 @@ def train_model(
                             loss = eval_loss_fn(Y_batch, Y_pred)
                             losses.append(loss.item())
 
-                        results[name].append(sum(losses) / len(losses))
+                        results[name].append(math.sqrt(sum(losses) / len(losses)))
 
     return results

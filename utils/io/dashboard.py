@@ -3,7 +3,7 @@ from typing import Generator
 
 import streamlit as st
 import torch as T
-from plotly import express as px
+from plotly import express as px  # type: ignore
 from plotly import graph_objects as go  # type: ignore
 from plotly.subplots import make_subplots  # type: ignore
 
@@ -50,7 +50,9 @@ def plot_loss_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
 def plot_prediction_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
     # maps a model -> a dict of task -> values
     predictions: dict[str, dict[str, list[T.Tensor] | T.Tensor]] = {}
-    num_cols = 2
+    num_cols = -1
+    max_length = -1
+    graph_range = [0.0, 1.0]
 
     for k, v in data.items():
         if not k.endswith("predictions"):
@@ -63,41 +65,56 @@ def plot_prediction_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
 
         predictions[model][metric] = v
 
-        if model == "base" and isinstance(v, list):
-            num_cols = len(v)
+        if model == "base":
+            if isinstance(v, list):
+                num_cols = len(v)
+            else:
+                max_length = len(v)
+                graph_range = [T.min(v).item() - 0.25, T.max(v).item() + 0.25]
+
 
     predictions_plot = make_subplots(rows=len(predictions), cols=num_cols)
+    predictions_plot.update_xaxes(showticklabels=False)
+    predictions_plot.update_yaxes(showticklabels=False, range=graph_range)
+
+    for metric, values in predictions["base"].items():
+        if isinstance(values, T.Tensor):
+            for row_idx in range(len(predictions)):
+                for col_idx in range(num_cols):
+                    predictions_plot.add_trace(
+                        go.Scatter(
+                            x=T.linspace(0, num_cols, len(values)),
+                            y=values.squeeze(),
+                            opacity=0.1,
+                            line={"color": "lightblue"}
+                        ),
+                        row_idx + 1,
+                        col_idx + 1,
+                    )
+
     for row_idx, ((model, task_data), color) in enumerate(
         zip(predictions.items(), plotly_colors())
     ):
         for col_idx in range(num_cols):
-            traces = []
-
             for metric, values in task_data.items():
                 if isinstance(values, list):
-                    x = T.linspace(col_idx, col_idx + 1, len(values[col_idx]))
+                    if len(values[col_idx]) == max_length:
+                        x = T.linspace(0, num_cols,  max_length)
+                    else:
+                        x = T.linspace(col_idx, col_idx + 1, len(values[col_idx]))
                     y = values[col_idx]
-                    traces.append(
-                        px.line(x=x.squeeze(), y=y.squeeze()).update_traces(
-                            line_color=color
-                        )
+                    predictions_plot.add_trace(
+                        go.Scatter(x=x.squeeze(), y=y.squeeze(), line={"color": color}),
+                        row_idx + 1,
+                        col_idx + 1,
                     )
-                else:
-                    x = T.linspace(0, num_cols, len(values))
-                    y = values
-                    traces.append(
-                        px.line(x=x.squeeze(), y=y.squeeze(), title="test").update_traces(
-                            line_color=color, opacity=0.1
-                        )
-                    )
-
-            plot_on_subplot(predictions_plot, (row_idx + 1, col_idx + 1), *traces)
+         
 
     st.plotly_chart(predictions_plot)
 
 
 def main():
-    for experiment in ["reproduce_results"]:
+    for experiment in ["01_reproduce_results"]:
         reader = ExperimentReader(experiment)
         reader.read()
 
@@ -110,7 +127,7 @@ def main():
         st.write("## Data")
         for name, data in reader.data.items():
             if isinstance(data, list):
-                st.write(f"{name}: list({len(data)}) of {data[0].shape}")
+                st.write(f"{name}: [{data[0].shape} (x{len(data)})]")
             else:
                 st.write(f"{name}: {data.shape}")
             with st.expander("View Data"):

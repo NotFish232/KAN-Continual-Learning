@@ -30,6 +30,8 @@ MLP_ARCHITECTURE = suggest_MLP_architecture(
     num_layers=3,
     num_params=NUM_PARAMETERS,
 )
+print(MLP_ARCHITECTURE)
+exit(1)
 KAN_ARCHITECTURE, KAN_GRID_SIZE = suggest_KAN_architecture(
     num_inputs=1,
     num_outputs=1,

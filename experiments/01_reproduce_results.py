@@ -37,13 +37,13 @@ def main() -> None:
     run_experiment(
         EXPERIMENT_NAME,
         [1, 1],
-        [1, 100, 1],
+        [1, 10, 10, 1],
         partitioned_datasets,
         {"eval": function_dataset},
-        {"function": X, "task": X_partitioned},
+        {"function": X},
         {"function": Y, "task": Y_partitioned},
         kan_kwargs=dict(
-            grid=200,
+            grid=100,
             grid_range=[0, NUM_PEAKS],
             bias_trainable=False,
             sp_trainable=False,
