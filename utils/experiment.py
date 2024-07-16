@@ -6,8 +6,8 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 
 from utils import train_model_v2
-from utils.models import MLP
 from utils.io import ExperimentWriter
+from utils.models import MLP
 
 
 def run_experiment(

@@ -1,8 +1,9 @@
 from pathlib import Path
 
 import torch as T
+from torch.utils.data import Dataset, TensorDataset
+
 from utils import gaussian
-from torch.utils.data import TensorDataset, Dataset
 from utils.experiment import run_experiment
 
 EXPERIMENT_NAME = Path(__file__).stem

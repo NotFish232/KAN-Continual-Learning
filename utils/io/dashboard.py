@@ -1,11 +1,14 @@
+from itertools import cycle
+from typing import Generator
+
 import streamlit as st
 import torch as T
-from utils.io import ExperimentReader, get_experiment_plots, get_experiments
-from plotly import graph_objects as go, express as px  # type: ignore
+from plotly import express as px
+from plotly import graph_objects as go  # type: ignore
 from plotly.subplots import make_subplots  # type: ignore
-from typing import Generator
-from itertools import cycle
+
 from utils import plot_on_subplot
+from utils.io import ExperimentReader, get_experiment_plots, get_experiments
 
 
 def plotly_colors() -> Generator[str, None, None]:
