@@ -1,10 +1,10 @@
+from math import pi, sqrt
 from typing import Callable
 
 import torch as T
 from kan import KAN
 from torch import nn
 from torch.nn import functional as F
-from math import sqrt, pi
 
 
 def num_parameters(module: nn.Module) -> int:
