@@ -92,7 +92,7 @@ def mse_reg_loss(
     small_mag_threshold: float = 1e-16,
     small_reg_factor: float = 1.0,
 ) -> Callable:
-    def reg():
+    def reg() -> T.Tensor:
         def nonlinear(
             x: T.Tensor,
             th: float = small_mag_threshold,
@@ -100,7 +100,7 @@ def mse_reg_loss(
         ) -> T.Tensor:
             return (x < th) * x * factor + (x > th) * (x + (factor - 1) * th)
 
-        reg_ = 0.0
+        reg_ = T.tensor(0.0)
         for i in range(len(kan.acts_scale)):
             vec = kan.acts_scale[i].reshape(-1)
 
@@ -117,7 +117,7 @@ def mse_reg_loss(
 
         return reg_
 
-    def _mse_reg_loss(Y_pred: T.Tensor, Y: T.Tensor) -> float:
+    def _mse_reg_loss(Y_pred: T.Tensor, Y: T.Tensor) -> T.Tensor:
         return F.mse_loss(Y_pred, Y) + lamb * reg()
 
     return _mse_reg_loss
