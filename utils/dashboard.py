@@ -9,18 +9,33 @@ from plotly.subplots import make_subplots  # type: ignore
 
 
 def plotly_colors() -> Generator[str, None, None]:
+    """
+    Yields sequences of distinctive colors for plotly plots
+
+    Yields
+    ------
+    Generator[str, None, None]
+        Yields indefinitely a cycle of distinctive colors
+    """
+
     yield from cycle(("red", "blue", "green"))
 
 
 def plot_loss_graphs(experiment_reader: ExperimentReader) -> None:
+    """
+    Plots the loss graphs of an experiment
+    """
+
     # maps a metric -> a dict of model -> values
     graphs: dict[str, dict[str, T.Tensor]] = {}
 
     for k, v in experiment_reader.data.items():
+        # only process result items that are losses
         if not k.endswith("loss"):
             continue
-
-        model, metric, _ = k.split("_")
+        
+        # grab
+        model, metric, _ = k.rsplit("_", 2)
 
         if metric not in graphs:
             graphs[metric] = {}
@@ -57,7 +72,7 @@ def plot_1d_prediction_graphs(experiment_reader: ExperimentReader) -> None:
         if not k.endswith("predictions"):
             continue
 
-        model, metric, _ = k.split("_")
+        model, metric, _ = k.rsplit("_", 2)
 
         if model not in predictions:
             predictions[model] = {}
@@ -121,12 +136,28 @@ def plot_1d_prediction_graphs(experiment_reader: ExperimentReader) -> None:
     st.plotly_chart(plot)
 
 
+def plot_2d_prediction_graphs(experiment_reader: ExperimentReader) -> None:
+    pass
+
+
 def plot_prediction_graphs(experiment_reader: ExperimentReader) -> None:
-    if experiment_reader.experiment_dtype == ExperimentDataType.function_1d:
-        plot_1d_prediction_graphs(experiment_reader)
+    """
+    Calls either `plot_1d_prediction_graphs` or `plot_2d_prediction_graphs`
+    depending on `experiment_reader.experiment_dtype`
+    """
+
+    match experiment_reader.experiment_dtype:
+        case ExperimentDataType.function_1d:
+            plot_1d_prediction_graphs(experiment_reader)
+        case ExperimentDataType.function_2d:
+            plot_2d_prediction_graphs(experiment_reader)
 
 
 def write_data(experiment_reader: ExperimentReader) -> None:
+    """
+    Writes the data section of the experiment_reader to streamlit
+    """
+
     for name, obj in experiment_reader.data.items():
         if isinstance(obj, list):
             st.write(f"{name}: [{obj[0].shape} (x{len(obj)})]")
@@ -137,12 +168,21 @@ def write_data(experiment_reader: ExperimentReader) -> None:
 
 
 def write_config(experiment_reader: ExperimentReader) -> None:
+    """
+    Writes the config section of the experiment_reader to streamlit
+    """
+
     for name, obj in experiment_reader.config.items():
         st.write(f"{name}: {obj}")
 
 
 @st.cache_data
 def fetch_experiment_reader(experiment: str) -> ExperimentReader:
+    """
+    Fetchs and loads the experiment_reader from an experiment
+    Cached using `@st.cache_data`
+    """
+
     reader = ExperimentReader(experiment)
     reader.read()
 

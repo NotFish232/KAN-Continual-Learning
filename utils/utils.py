@@ -2,9 +2,9 @@ from typing import Callable
 
 import torch as T
 from kan import KAN
-from plotly import graph_objects as go  # type: ignore
 from torch import nn
 from torch.nn import functional as F
+from math import sqrt, pi
 
 
 def num_parameters(module: nn.Module) -> int:
@@ -96,4 +96,4 @@ def gaussian(x: T.Tensor, mean: float, std: float) -> T.Tensor:
         Tensor with same shape as x and with values of the gaussian distribution
     """
 
-    return T.exp(-((x - mean) ** 2) / (2 * std**2))
+    return (1 / (std * sqrt(2 * pi))) * T.exp(-(1 / 2) * ((x - mean) / std) ** 2)
