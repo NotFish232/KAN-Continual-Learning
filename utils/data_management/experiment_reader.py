@@ -30,7 +30,7 @@ class ExperimentReader:
             full_data = pickle.load(f)
 
         self.experiment_name = full_data["experiment_name"]
-        self.experiment_dtype = full_data["experiment_dtype"]
+        self.experiment_dtype = ExperimentDataType(full_data["experiment_dtype"])
         self.config = full_data["config"]
         self.data = full_data["data"]
 

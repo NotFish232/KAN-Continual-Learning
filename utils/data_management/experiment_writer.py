@@ -39,7 +39,7 @@ class ExperimentWriter:
 
         full_data = {
             "experiment_name": self.experiment_name,
-            "experiment_dtype": self.experiment_dtype,
+            "experiment_dtype": self.experiment_dtype.value,
             "config": self.config,
             "data": self.data,
         }

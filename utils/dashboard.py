@@ -3,7 +3,7 @@ from typing import Callable, Generator
 
 import streamlit as st
 import torch as T
-from data_management import ExperimentReader  # type: ignore
+from data_management import ExperimentDataType, ExperimentReader  # type: ignore
 from plotly import graph_objects as go  # type: ignore
 from plotly.subplots import make_subplots  # type: ignore
 
@@ -12,11 +12,11 @@ def plotly_colors() -> Generator[str, None, None]:
     yield from cycle(("red", "blue", "green"))
 
 
-def plot_loss_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
+def plot_loss_graphs(experiment_reader: ExperimentReader) -> None:
     # maps a metric -> a dict of model -> values
     graphs: dict[str, dict[str, T.Tensor]] = {}
 
-    for k, v in data.items():
+    for k, v in experiment_reader.data.items():
         if not k.endswith("loss"):
             continue
 
@@ -46,14 +46,14 @@ def plot_loss_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
         st.plotly_chart(plot)
 
 
-def plot_1d_prediction_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
+def plot_1d_prediction_graphs(experiment_reader: ExperimentReader) -> None:
     # maps a model -> a dict of task -> values
     predictions: dict[str, dict[str, list[T.Tensor] | T.Tensor]] = {}
     num_cols = -1
     max_length = -1
     graph_range = [0.0, 1.0]
 
-    for k, v in data.items():
+    for k, v in experiment_reader.data.items():
         if not k.endswith("predictions"):
             continue
 
@@ -121,18 +121,13 @@ def plot_1d_prediction_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> Non
     st.plotly_chart(plot)
 
 
-def plot_prediction_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
-    first_prediction = next(
-        (v for k, v in data.items() if k.endswith("predictions")), None
-    )
-    if first_prediction is None:
-        return
-    
-    plot_1d_prediction_graphs(data)
+def plot_prediction_graphs(experiment_reader: ExperimentReader) -> None:
+    if experiment_reader.experiment_dtype == ExperimentDataType.function_1d:
+        plot_1d_prediction_graphs(experiment_reader)
 
 
-def write_data(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
-    for name, obj in data.items():
+def write_data(experiment_reader: ExperimentReader) -> None:
+    for name, obj in experiment_reader.data.items():
         if isinstance(obj, list):
             st.write(f"{name}: [{obj[0].shape} (x{len(obj)})]")
         else:
@@ -141,17 +136,22 @@ def write_data(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
             st.write(str(obj))
 
 
+def write_config(experiment_reader: ExperimentReader) -> None:
+    for name, obj in experiment_reader.config.items():
+        st.write(f"{name}: {obj}")
+
+
 @st.cache_data
-def fetch_experiment_data(experiment: str) -> dict[str, list[T.Tensor] | T.Tensor]:
+def fetch_experiment_reader(experiment: str) -> ExperimentReader:
     reader = ExperimentReader(experiment)
     reader.read()
 
-    return reader.data
+    return reader
 
 
 def page_function(experiment: str) -> Callable:
     def _page_function() -> None:
-        experiment_data = fetch_experiment_data(experiment)
+        experiment_reader = fetch_experiment_reader(experiment)
 
         st.write(f"# {experiment}")
         st.write("##")
@@ -159,12 +159,17 @@ def page_function(experiment: str) -> Callable:
         st.write("## Graphs")
         st.write("")
         st.write("")
-        plot_loss_graphs(experiment_data)
-        plot_prediction_graphs(experiment_data)
+        plot_loss_graphs(experiment_reader)
+        plot_prediction_graphs(experiment_reader)
 
         st.write("## Data")
         st.write("")
-        write_data(experiment_data)
+        write_data(experiment_reader)
+        st.write("##")
+
+        st.write("## Config")
+        st.write("")
+        write_config(experiment_reader)
 
     return _page_function
 
