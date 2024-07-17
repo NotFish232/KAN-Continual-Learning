@@ -67,13 +67,14 @@ def main() -> None:
         {"function": X},
         {"function": Y, "task": Y_partitioned},
         ExperimentDataType.function_2d,
-        kan_kwargs=dict(
-            grid=KAN_GRID_SIZE,
-            grid_range=[0, NUM_PEAKS],
-            bias_trainable=False,
-            sp_trainable=False,
-            sb_trainable=False,
-        ),
+        kan_kwargs={
+            "grid": KAN_GRID_SIZE,
+            "grid_range": [0, NUM_PEAKS],
+            "bias_trainable": False,
+            "sp_trainable": False,
+            "sb_trainable": False,
+        },
+        training_kwargs={"epochs": 50},
     )
 
 

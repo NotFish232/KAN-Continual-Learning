@@ -19,9 +19,10 @@ def run_experiment(
     pred_datasets: dict[str, list[T.Tensor] | T.Tensor],
     pred_ground_truth: dict[str, list[T.Tensor] | T.Tensor],
     experiment_dtype: ExperimentDataType,
+    device: T.device | None = None,
     kan_kwargs: dict[str, Any] = {},
     mlp_kwargs: dict[str, Any] = {},
-    device: T.device | None = None,
+    training_kwargs: dict[str, Any] = {},
 ) -> None:
     """
     Runs an experiment on the models provided keeping track of various metrics,
@@ -65,14 +66,17 @@ def run_experiment(
     experiment_dtype : ExperimentDataType
         Type for dataset, i.e., 1d functions, 2d functions, images, etc
 
+    device : T.device | None, optional
+        Device to run on, defaults to cuda if available else cpu
+
     kan_kwargs : dict[str, Any], optional
         Additional kwargs to pass to kan constructor, by default {}
 
     mlp_kwargs : dict[str, Any], optional
         Additional kwargs to pass to mlp constructor, by default {}
 
-    device : T.device | None, optional
-        Device to run on, defaults to cuda if available else cpu
+    training_kwargs : dict[str, Any], optional
+        Additional kwargs to pass to training function, by default {}
 
     Returns
     ----------
@@ -103,7 +107,7 @@ def run_experiment(
         }
 
         for model_name, model in models.items():
-            model_results = train_model_v2(model, datasets)
+            model_results = train_model_v2(model, datasets, **training_kwargs)
 
             for metric, value in model_results.items():
                 results[f"{model_name}_{metric}_loss"].extend(value)
