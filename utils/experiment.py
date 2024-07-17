@@ -145,4 +145,5 @@ def run_experiment(
     for metric, ground_truth in pred_ground_truth.items():
         experiment_writer.log_data(f"base_{metric}_predictions", ground_truth)
 
+    # flush changes to disk
     experiment_writer.write()
