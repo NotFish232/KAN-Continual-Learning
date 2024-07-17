@@ -22,6 +22,48 @@ def train_model(
     eval_batch_size: int = 32,
     logging_freq: int = 100,
 ) -> dict[str, list[float]]:
+    """
+    Trains a model according to parameters and datasets
+    while saving and returning metrics
+
+    Parameters
+    ----------
+    model : nn.Module
+        Pytorch model to train
+
+    datasets : dict[str, Dataset]
+        Dataset to train / evaluate on, must contain key "train"
+
+    optimizer : Type[optim.Optimizer], optional
+        Pytorch optimize to use, by default optim.SGD
+
+    loss_fn : Callable, optional
+        Loss function for training, by default nn.MSELoss()
+
+    epochs : int, optional
+        Number of epochs to train for, by default 500
+
+    lr : float, optional
+        Learning rate passed to optimizer as kwarg, by default 1e-2
+
+    batch_size : int, optional
+        Batch size for training dataloader, by default 8
+
+    eval_loss_fn : Callable, optional
+        Function to evaluate non-train datasets on, by default RMSE_loss
+
+    eval_batch_size : int, optional
+        Batch size for evaluation dataloaders, by default 32
+
+    logging_freq : int, optional
+        Frequency to save train loss and evaluation losses, by default 100
+
+    Returns
+    -------
+    dict[str, list[float]]
+        Loss metrics for each dataset in datasets 
+    """
+
     model_optimizer = optimizer(model.parameters(), lr=lr)  # type: ignore
 
     train_dataset = datasets["train"]
