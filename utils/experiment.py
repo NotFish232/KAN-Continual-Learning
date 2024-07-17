@@ -23,32 +23,6 @@ def run_experiment(
     mlp_kwargs: dict[str, Any] = {},
     device: T.device | None = None,
 ) -> None:
-    """
-    test
-
-    :param experiment_name: _description_
-    :type experiment_name: str
-    :param kan_architecture: _description_
-    :type kan_architecture: list[int]
-    :param mlp_architecture: _description_
-    :type mlp_architecture: list[int]
-    :param task_datasets: _description_
-    :type task_datasets: list[Dataset]
-    :param eval_datasets: _description_
-    :type eval_datasets: dict[str, list[Dataset]  |  Dataset]
-    :param pred_datasets: _description_
-    :type pred_datasets: dict[str, list[T.Tensor]  |  T.Tensor]
-    :param pred_ground_truth: _description_
-    :type pred_ground_truth: dict[str, list[T.Tensor]  |  T.Tensor]
-    :param experiment_dtype: _description_
-    :type experiment_dtype: ExperimentDataType
-    :param kan_kwargs: _description_, defaults to {}
-    :type kan_kwargs: dict[str, Any], optional
-    :param mlp_kwargs: _description_, defaults to {}
-    :type mlp_kwargs: dict[str, Any], optional
-    :param device: _description_, defaults to None
-    :type device: T.device | None, optional
-    """
     device = device or T.device("cuda" if T.cuda.is_available() else "cpu")
 
     kan = KAN(kan_architecture, device=device, **kan_kwargs)
