@@ -20,6 +20,7 @@ def plotly_colors() -> Generator[str, None, None]:
 
     yield from cycle(("red", "blue", "green"))
 
+
 @st.cache_data
 def create_loss_graphs(_experiment_reader: ExperimentReader) -> list[go.Figure]:
     """
@@ -49,7 +50,6 @@ def create_loss_graphs(_experiment_reader: ExperimentReader) -> list[go.Figure]:
         assert isinstance(v, T.Tensor)
         graphs[metric][model] = v
 
-
     plots = []
 
     # Generated a graph for each metric
@@ -66,12 +66,12 @@ def create_loss_graphs(_experiment_reader: ExperimentReader) -> list[go.Figure]:
             )
             traces.append(trace)
 
-        plot = go.Figure(traces)
-        plot.update_layout(margin={"t": 0})
+        plot = go.Figure(
+            traces,
+            layout=go.Layout(title=go.layout.Title(text=f"{metric.capitalize()} Loss")),
+        )
         plots.append(plot)
-        # st.write(f"{metric.capitalize()} Loss")
-        # st.plotly_chart(plot)
-    
+
     return plots
 
 
@@ -123,7 +123,7 @@ def create_1d_prediction_graph(experiment_reader: ExperimentReader) -> go.Figure
     plot = make_subplots(rows=len(predictions), cols=num_tasks)
     plot.update_xaxes(showticklabels=False)
     plot.update_yaxes(showticklabels=False, range=graph_range)
-    plot.update_layout(margin={"t": 0})
+    plot.update_layout({"title": {"text": "Predictions"}})
 
     for metric, values in predictions["base"].items():
         # plot all non task specific baselines on all subplots
