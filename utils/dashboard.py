@@ -21,22 +21,15 @@ def plotly_colors() -> Generator[str, None, None]:
     yield from cycle(("red", "blue", "green"))
 
 
-@st.cache_data
-def create_loss_graphs(_experiment_reader: ExperimentReader) -> list[go.Figure]:
+def plot_loss_graphs(experiment_reader: ExperimentReader) -> None:
     """
     Plots the loss graphs of an experiment
-    Cached with `@st.cache_data`
-
-    Returns
-    -------
-    list[go.Figure]
-        List of loss graphs
     """
 
     # maps a metric -> a dict of model -> values
     graphs: dict[str, dict[str, T.Tensor]] = {}
 
-    for k, v in _experiment_reader.data.items():
+    for k, v in experiment_reader.data.items():
         # only process result items that are losses
         if not k.endswith("loss"):
             continue
@@ -50,9 +43,7 @@ def create_loss_graphs(_experiment_reader: ExperimentReader) -> list[go.Figure]:
         assert isinstance(v, T.Tensor)
         graphs[metric][model] = v
 
-    plots = []
-
-    # Generated a graph for each metric
+    # Generate a graph for each metric
     # where each trace is a different model
     for metric, metric_data in graphs.items():
         traces = []
@@ -70,20 +61,14 @@ def create_loss_graphs(_experiment_reader: ExperimentReader) -> list[go.Figure]:
             traces,
             layout=go.Layout(title=go.layout.Title(text=f"{metric.capitalize()} Loss")),
         )
-        plots.append(plot)
-
-    return plots
+        st.plotly_chart(plot)
 
 
-def create_1d_prediction_graph(experiment_reader: ExperimentReader) -> go.Figure:
+def plot_1d_prediction_graph(experiment_reader: ExperimentReader) -> None:
     """
     Creates prediction graphs for 1d functions, i.e., curves
-
-    Returns
-    -------
-    go.Figure
-        Plot with subplots to show model predictions
     """
+
     # maps a model -> a dict of task -> values
     predictions: dict[str, dict[str, list[T.Tensor] | T.Tensor]] = {}
 
@@ -172,31 +157,117 @@ def create_1d_prediction_graph(experiment_reader: ExperimentReader) -> go.Figure
                         col_idx + 1,
                     )
 
-    return plot
+    st.plotly_chart(plot)
 
 
 def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
-    pass
+    """
+    Creates prediction graphs for 2d functions, i.e., surfaces
+    """
+
+    # maps a model -> a dict of task -> values
+    predictions: dict[str, dict[str, list[T.Tensor] | T.Tensor]] = {}
+
+    for k, v in experiment_reader.data.items():
+        if not k.endswith("predictions"):
+            continue
+
+        model, metric, _ = k.rsplit("_", 2)
+
+        if model not in predictions:
+            predictions[model] = {}
+
+        predictions[model][metric] = v
+
+    assert "base" in predictions
+
+    # get function specific data like num tasks, num points, and graph range
+    # from the metric baselines
+    num_tasks = None
+    num_points = None
+    graph_range = None
+
+    for v in predictions["base"].values():
+        if isinstance(v, list):
+            # num tasks is len of list since predictions are made each task
+            num_tasks = len(v)
+        else:
+            # num points is len of v if it is a tensor because then v represents the baseline for the whole graph
+            # as such, finding the min and max of v will let you find the range of the function
+            num_points = len(v)
+            graph_range = [T.min(v).item() - 0.25, T.max(v).item() + 0.25]
+
+    # make sure all of the function specific data was found from the baseline
+    assert num_tasks is not None and num_points is not None and graph_range is not None
+
+    # create subplots where each row is a model and each column is a task
+    plot = make_subplots(rows=len(predictions), cols=num_tasks)
+    plot.update_xaxes(showticklabels=False)
+    plot.update_yaxes(showticklabels=False, range=graph_range)
+    plot.update_layout({"title": {"text": "Predictions"}})
+
+    for metric, values in predictions["base"].items():
+        # plot all non task specific baselines on all subplots
+        if isinstance(values, T.Tensor):
+            for row_idx in range(len(predictions)):
+                for col_idx in range(num_tasks):
+                    # plot.add_trace(
+                    #     go.Scatter(
+                    #         x=T.linspace(0, num_tasks, len(values)),
+                    #         y=values.squeeze(),
+                    #         opacity=0.1,
+                    #         line={"color": "lightblue"},
+                    #         name="Base Function",
+                    #         legendgroup="base_background",
+                    #         showlegend=row_idx + col_idx == 0,
+                    #     ),
+                    #     row_idx + 1,
+                    #     col_idx + 1,
+                    # )
+                    pass
+
+    # for row_idx, ((model, task_data), color) in enumerate(
+    #     zip(predictions.items(), plotly_colors())
+    # ):
+    #     for col_idx in range(num_tasks):
+    #         for metric, values in task_data.items():
+    #             if isinstance(values, list):
+    #                 # if prediction is the same length as the max function length baseline
+    #                 # then plot it over the entire graph
+    #                 # otherwise its a graph of a task and shold be plotted on a subset of the graph
+    #                 if len(values[col_idx]) == num_points:
+    #                     x = T.linspace(0, num_tasks, num_points)
+    #                 else:
+    #                     x = T.linspace(col_idx, col_idx + 1, len(values[col_idx]))
+
+    #                 y = values[col_idx]
+    #                 plot.add_trace(
+    #                     go.Scatter(
+    #                         x=x.squeeze(),
+    #                         y=y.squeeze(),
+    #                         line={"color": color},
+    #                         name=f"{model.capitalize()} {metric.capitalize()}",
+    #                         legendgroup=model,
+    #                         showlegend=col_idx == 0,
+    #                     ),
+    #                     row_idx + 1,
+    #                     col_idx + 1,
+    #                 )
+
+    return plot
 
 
-@st.cache_data
-def create_prediction_graph(_experiment_reader: ExperimentReader) -> go.Figure:
+def plot_prediction_graph(experiment_reader: ExperimentReader) -> None:
     """
     Calls either `plot_1d_prediction_graphs` or `plot_2d_prediction_graphs`
     depending on `experiment_reader.experiment_dtype`
-    Cached with `@st.cache_data`
-
-    Returns
-    -------
-    go.Figure
-        Graph of model predictions
     """
 
-    match _experiment_reader.experiment_dtype:
+    match experiment_reader.experiment_dtype:
         case ExperimentDataType.function_1d:
-            return create_1d_prediction_graph(_experiment_reader)
+            plot_1d_prediction_graph(experiment_reader)
         case ExperimentDataType.function_2d:
-            plot_2d_prediction_graph(_experiment_reader)
+            plot_2d_prediction_graph(experiment_reader)
 
 
 def write_data(experiment_reader: ExperimentReader) -> None:
@@ -245,9 +316,8 @@ def page_function(experiment: str) -> Callable:
         st.write("## Graphs")
         st.write("")
         st.write("")
-        for graph in create_loss_graphs(experiment_reader):
-            st.plotly_chart(graph)
-        st.plotly_chart(create_prediction_graph(experiment_reader))
+        plot_loss_graphs(experiment_reader)
+        plot_prediction_graph(experiment_reader)
 
         st.write("## Data")
         st.write("")
