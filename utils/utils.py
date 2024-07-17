@@ -1,85 +1,28 @@
-import math
-from typing import Any, Callable
+from typing import Callable
 
 import torch as T
 from kan import KAN
 from plotly import graph_objects as go  # type: ignore
-from torch import nn, optim
+from torch import nn
 from torch.nn import functional as F
 
 
-def suggest_MLP_architecture(
-    num_inputs: int, num_outputs: int, num_layers: int, num_params: int
-) -> list[int]:
-    """
-    creates an MLP architecture satisfying the constraints and having roughly n parameters
-    """
-    hidden_dim = int(math.sqrt(num_params / max(num_layers - 2, 1)) - 1)
-
-    architecture = [num_inputs, *([hidden_dim] * (num_layers - 1)), num_outputs]
-
-    return architecture
-
-
-def suggest_KAN_architecture(
-    num_inputs: int,
-    num_outputs: int,
-    num_layers: int,
-    num_params: int,
-) -> tuple[list[int], int]:
-    """
-    creates an KAN architecture satisfying the constraints and having roughly n parameters
-    """
-    grid_size = num_params // max(num_layers - 2, 1) ** 2
-
-    hidden_dim = int(math.sqrt(num_params / max(grid_size * (num_layers - 2), 1)) - 1)
-
-    architecture = [num_inputs, *([hidden_dim] * (num_layers - 1)), num_outputs]
-
-    return architecture, grid_size
-
-
 def num_parameters(module: nn.Module) -> int:
+    """
+    Calculates the number of trainable parameters in a model
+
+    Parameters
+    ----------
+    module : nn.Module
+        A pytorch model
+
+    Returns
+    -------
+    int
+        Number of trainable parameters
+    """
+
     return sum(p.numel() for p in module.parameters() if p.requires_grad)
-
-
-def train_model(
-    model: nn.Module,
-    dataset: dict[str, T.Tensor],
-    num_epochs: int,
-    LR: float = 1e-2,
-    loss_fn: Callable | None = None,
-) -> dict[str, Any]:
-    """
-    trains a model using SGD for num_epochs
-    dataset should be formatted the same way it is for pykan
-    """
-    X_train = dataset["train_input"]
-    Y_train = dataset["train_label"]
-    X_test = dataset["test_input"]
-    Y_test = dataset["test_label"]
-
-    optimizer = optim.Adam(model.parameters(), LR)
-    criterion = loss_fn or nn.MSELoss()
-
-    results: dict[str, Any] = {
-        "train_loss": [],
-        "test_loss": [],
-    }
-
-    for epoch in range(num_epochs):
-        Y_pred = model(X_train)
-        loss = criterion(Y_pred, Y_train)
-        loss.backward()
-
-        optimizer.step()
-        optimizer.zero_grad()
-
-        with T.no_grad():
-            results["train_loss"].append(T.sqrt(F.mse_loss(model(X_train), Y_train)))
-            results["test_loss"].append(T.sqrt(F.mse_loss(model(X_test), Y_test)))
-
-    return results
 
 
 def mse_reg_loss(
@@ -92,6 +35,15 @@ def mse_reg_loss(
     small_mag_threshold: float = 1e-16,
     small_reg_factor: float = 1.0,
 ) -> Callable:
+    """
+    MSE Loss with regularization term lifted from pykan's implmentation
+
+    Returns
+    -------
+    Callable
+        Callable which returns MSE Loss with regularization term
+    """
+
     def reg() -> T.Tensor:
         def nonlinear(
             x: T.Tensor,
@@ -123,13 +75,25 @@ def mse_reg_loss(
     return _mse_reg_loss
 
 
-def plot_on_subplot(
-    plot: go.Figure, pos: tuple[int, int], *subplots: go.Figure
-) -> None:
-    for subplot in subplots:
-        for figure in subplot.data:
-            plot.add_trace(figure, pos[0], pos[1])
-
-
 def gaussian(x: T.Tensor, mean: float, std: float) -> T.Tensor:
+    """
+    Basic implementation of the gaussian distribution
+
+    Parameters
+    ----------
+    x : T.Tensor
+        Values to evaluate gaussian distribution at
+
+    mean : float
+        Mean of gaussian distribution
+
+    std : float
+        Standard deviation of gaussian distribution
+
+    Returns
+    -------
+    T.Tensor
+        Tensor with same shape as x and with values of the gaussian distribution
+    """
+
     return T.exp(-((x - mean) ** 2) / (2 * std**2))

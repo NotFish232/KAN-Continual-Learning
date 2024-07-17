@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 
 import torch as T
@@ -6,7 +7,6 @@ from torch.utils.data import Dataset, TensorDataset
 from utils import gaussian
 from utils.data_management import ExperimentDataType
 from utils.experiment import run_experiment
-import math
 
 EXPERIMENT_NAME = Path(__file__).stem
 

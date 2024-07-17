@@ -4,10 +4,29 @@ import torch as T
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
+from typing import Any
 
+def RMSE_loss(input: T.Tensor, target: T.Tensor, **mse_kwargs: Any) -> T.Tensor:
+    """
+    Calculates Root Mean Squared Error
 
-def RMSE_loss(input: T.Tensor, target: T.Tensor) -> T.Tensor:
-    return T.sqrt(F.mse_loss(input, target))
+    Parameters
+    ----------
+    input : T.Tensor
+        Input tensor
+
+    target : T.Tensor
+        Target tensor to compare to
+
+    mse_kwargs : dict[str, Any]
+        Kwargs to pass to F.mse_loss
+        
+    Returns
+    -------
+    T.Tensor
+        Dim 0 tensor representing root mean squared errors
+    """
+    return T.sqrt(F.mse_loss(input, target, **mse_kwargs))
 
 
 def train_model(
