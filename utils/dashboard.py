@@ -6,6 +6,7 @@ import torch as T
 from data_management import ExperimentDataType, ExperimentReader  # type: ignore
 from plotly import graph_objects as go  # type: ignore
 from plotly.subplots import make_subplots  # type: ignore
+import math
 
 
 def plotly_colors() -> Generator[str, None, None]:
@@ -200,31 +201,47 @@ def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
     # make sure all of the function specific data was found from the baseline
     assert num_tasks is not None and num_points is not None and graph_range is not None
 
+    # 2d task so num_points represents num_points on each axis
+    num_points = int(math.sqrt(num_points))
+
     # create subplots where each row is a model and each column is a task
-    plot = make_subplots(rows=len(predictions), cols=num_tasks)
-    plot.update_xaxes(showticklabels=False)
-    plot.update_yaxes(showticklabels=False, range=graph_range)
+    plot = make_subplots(
+        rows=len(predictions),
+        cols=num_tasks,
+        specs=[
+            [{"type": "surface"} for _ in range(num_tasks)]
+            for _ in range(len(predictions))
+        ],
+    )
+    # add plot title
     plot.update_layout({"title": {"text": "Predictions"}})
+
+    # remove ticks from all subplots
+    plot.update_layout(
+        {
+            f"scene{i}": {
+                axis: {"showticklabels": False} for axis in ("xaxis", "yaxis", "zaxis")
+            }
+            for i in range(1, num_tasks * len(predictions) + 1)
+        }
+    )
 
     for metric, values in predictions["base"].items():
         # plot all non task specific baselines on all subplots
         if isinstance(values, T.Tensor):
             for row_idx in range(len(predictions)):
                 for col_idx in range(num_tasks):
-                    # plot.add_trace(
-                    #     go.Scatter(
-                    #         x=T.linspace(0, num_tasks, len(values)),
-                    #         y=values.squeeze(),
-                    #         opacity=0.1,
-                    #         line={"color": "lightblue"},
-                    #         name="Base Function",
-                    #         legendgroup="base_background",
-                    #         showlegend=row_idx + col_idx == 0,
-                    #     ),
-                    #     row_idx + 1,
-                    #     col_idx + 1,
-                    # )
-                    pass
+                    plot.add_trace(
+                        go.Surface(
+                            z=values.reshape(*([int(math.sqrt(num_points))] * 4), 1)
+                            .permute(0, 2, 1, 3, 4)
+                            .reshape(num_points, num_points),
+                            showscale=False,
+                            opacity=0.1,
+                        ),
+                        row_idx + 1,
+                        col_idx + 1,
+                    )
 
     # for row_idx, ((model, task_data), color) in enumerate(
     #     zip(predictions.items(), plotly_colors())
@@ -254,7 +271,7 @@ def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
     #                     col_idx + 1,
     #                 )
 
-    return plot
+    st.plotly_chart(plot)
 
 
 def plot_prediction_graph(experiment_reader: ExperimentReader) -> None:
