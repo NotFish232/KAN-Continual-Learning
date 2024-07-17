@@ -1,5 +1,5 @@
 from itertools import cycle
-from typing import Generator
+from typing import Callable, Generator
 
 import streamlit as st
 import torch as T
@@ -131,10 +131,16 @@ def write_data(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
             st.write(str(obj))
 
 
-def main():
-    for experiment in ExperimentReader.get_experiments():
-        reader = ExperimentReader(experiment)
-        reader.read()
+@st.cache_data
+def fetch_experiment_data(experiment: str) -> dict[str, list[T.Tensor] | T.Tensor]:
+    reader = ExperimentReader(experiment)
+    reader.read()
+
+    return reader.data
+
+def page_function(experiment: str) -> Callable:
+    def _page_function() -> None:
+        experiment_data = fetch_experiment_data(experiment)
 
         st.write(f"# {experiment}")
         st.write("##")
@@ -142,12 +148,23 @@ def main():
         st.write("## Graphs")
         st.write("")
         st.write("")
-        plot_loss_graphs(reader.data)
-        plot_prediction_graphs(reader.data)
+        plot_loss_graphs(experiment_data)
+        plot_prediction_graphs(experiment_data)
 
         st.write("## Data")
         st.write("")
-        write_data(reader.data)
+        write_data(experiment_data)
+    
+    return _page_function
+
+
+def main():
+    pages = [
+        st.Page(page_function(e), title=e, url_path=e)
+        for e in ExperimentReader.get_experiments()
+    ]
+    navigation = st.navigation(pages)
+    navigation.run()
 
 
 if __name__ == "__main__":
