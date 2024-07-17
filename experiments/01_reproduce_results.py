@@ -37,7 +37,7 @@ def main() -> None:
     run_experiment(
         EXPERIMENT_NAME,
         [1, 1],
-        [1, 10, 10, 1],
+        [1, 20, 20, 1],
         partitioned_datasets,
         {"eval": function_dataset},
         {"function": X},

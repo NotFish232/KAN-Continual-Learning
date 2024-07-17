@@ -34,13 +34,15 @@ def plot_loss_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
         for (model, values), color in zip(metric_data.items(), plotly_colors()):
             trace = go.Scatter(
                 y=values,
-                name=f"{model} {metric} loss",
+                name=f"{model.capitalize()} {metric} loss",
                 showlegend=True,
                 line={"color": color},
             )
             traces.append(trace)
 
         plot = go.Figure(traces)
+        plot.update_layout(margin={"t": 0})
+        st.write(f"{metric.capitalize()} Loss")
         st.plotly_chart(plot)
 
 
@@ -69,21 +71,24 @@ def plot_prediction_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
                 max_length = len(v)
                 graph_range = [T.min(v).item() - 0.25, T.max(v).item() + 0.25]
 
-
-    predictions_plot = make_subplots(rows=len(predictions), cols=num_cols)
-    predictions_plot.update_xaxes(showticklabels=False)
-    predictions_plot.update_yaxes(showticklabels=False, range=graph_range)
+    plot = make_subplots(rows=len(predictions), cols=num_cols)
+    plot.update_xaxes(showticklabels=False)
+    plot.update_yaxes(showticklabels=False, range=graph_range)
+    plot.update_layout(margin={"t": 0})
 
     for metric, values in predictions["base"].items():
         if isinstance(values, T.Tensor):
             for row_idx in range(len(predictions)):
                 for col_idx in range(num_cols):
-                    predictions_plot.add_trace(
+                    plot.add_trace(
                         go.Scatter(
                             x=T.linspace(0, num_cols, len(values)),
                             y=values.squeeze(),
                             opacity=0.1,
-                            line={"color": "lightblue"}
+                            line={"color": "lightblue"},
+                            name="Base Function",
+                            legendgroup="base_background",
+                            showlegend=row_idx + col_idx == 0,
                         ),
                         row_idx + 1,
                         col_idx + 1,
@@ -96,18 +101,34 @@ def plot_prediction_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
             for metric, values in task_data.items():
                 if isinstance(values, list):
                     if len(values[col_idx]) == max_length:
-                        x = T.linspace(0, num_cols,  max_length)
+                        x = T.linspace(0, num_cols, max_length)
                     else:
                         x = T.linspace(col_idx, col_idx + 1, len(values[col_idx]))
                     y = values[col_idx]
-                    predictions_plot.add_trace(
-                        go.Scatter(x=x.squeeze(), y=y.squeeze(), line={"color": color}),
+                    plot.add_trace(
+                        go.Scatter(
+                            x=x.squeeze(),
+                            y=y.squeeze(),
+                            line={"color": color},
+                            name=f"{model.capitalize()} {metric.capitalize()}",
+                            legendgroup=model,
+                            showlegend=col_idx == 0,
+                        ),
                         row_idx + 1,
                         col_idx + 1,
                     )
-         
+    st.write("Predictions")
+    st.plotly_chart(plot)
 
-    st.plotly_chart(predictions_plot)
+
+def write_data(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
+    for name, obj in data.items():
+        if isinstance(obj, list):
+            st.write(f"{name}: [{obj[0].shape} (x{len(obj)})]")
+        else:
+            st.write(f"{name}: {obj.shape}")
+        with st.expander("View Data"):
+            st.write(str(obj))
 
 
 def main():
@@ -115,20 +136,18 @@ def main():
         reader = ExperimentReader(experiment)
         reader.read()
 
-        st.write(f"### {experiment}")
+        st.write(f"# {experiment}")
+        st.write("##")
 
         st.write("## Graphs")
+        st.write("")
+        st.write("")
         plot_loss_graphs(reader.data)
         plot_prediction_graphs(reader.data)
 
         st.write("## Data")
-        for name, data in reader.data.items():
-            if isinstance(data, list):
-                st.write(f"{name}: [{data[0].shape} (x{len(data)})]")
-            else:
-                st.write(f"{name}: {data.shape}")
-            with st.expander("View Data"):
-                st.write(str(data))
+        st.write("")
+        write_data(reader.data)
 
 
 if __name__ == "__main__":

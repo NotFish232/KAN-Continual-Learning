@@ -14,8 +14,8 @@ def train_model(
     model: nn.Module,
     datasets: dict[str, Dataset],
     optimizer: Type[optim.Optimizer] = optim.SGD,
-    loss_fn: Callable = RMSE_loss,
-    epochs: int = 200,
+    loss_fn: Callable = nn.MSELoss(),
+    epochs: int = 500,
     lr: float = 1e-2,
     batch_size: int = 8,
     eval_loss_fn: Callable = RMSE_loss,
@@ -40,11 +40,12 @@ def train_model(
             loss = loss_fn(Y_batch, Y_pred)
             loss.backward()
 
+            eval_loss = eval_loss_fn(Y_batch, Y_pred).item()
             if iteration == 0:
-                rolling_loss = loss.item()
+                rolling_loss = eval_loss
             else:
                 n = min(iteration, logging_freq)
-                rolling_loss = (rolling_loss * (n - 1) + loss.item()) / n
+                rolling_loss = (rolling_loss * (n - 1) + eval_loss) / n
 
             model_optimizer.step()
             model_optimizer.zero_grad()
