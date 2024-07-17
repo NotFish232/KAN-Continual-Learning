@@ -13,6 +13,10 @@ NUM_PEAKS = 5
 NUM_POINTS = 1_000
 GAUSSIAN_STD = 0.2
 
+KAN_ARCHITECTURE = [1, 4, 1]
+KAN_GRID_SIZE = 100
+MLP_ARCHICTURE = [1, 16, 16, 1]
+
 
 def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
     X = T.linspace(0, NUM_PEAKS, NUM_POINTS, device=device).unsqueeze(1)
@@ -37,15 +41,15 @@ def main() -> None:
 
     run_experiment(
         EXPERIMENT_NAME,
-        [1, 10, 1],
-        [1, 20, 20, 1],
+        KAN_ARCHITECTURE,
+        MLP_ARCHICTURE,
         partitioned_datasets,
         {"eval": function_dataset},
         {"function": X},
         {"function": Y, "task": Y_partitioned},
         ExperimentDataType.function_1d,
         kan_kwargs=dict(
-            grid=50,
+            grid=KAN_GRID_SIZE,
             grid_range=[0, NUM_PEAKS],
             bias_trainable=False,
             sp_trainable=False,
