@@ -11,7 +11,7 @@ import math
 EXPERIMENT_NAME = Path(__file__).stem
 
 NUM_PEAKS = 2
-NUM_POINTS = 200
+NUM_POINTS = 100
 GAUSSIAN_STD_1 = 0.2
 GAUSSIAN_STD_2 = 0.1
 
