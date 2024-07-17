@@ -46,7 +46,7 @@ def plot_loss_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
         st.plotly_chart(plot)
 
 
-def plot_prediction_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
+def plot_1d_prediction_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
     # maps a model -> a dict of task -> values
     predictions: dict[str, dict[str, list[T.Tensor] | T.Tensor]] = {}
     num_cols = -1
@@ -121,6 +121,16 @@ def plot_prediction_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
     st.plotly_chart(plot)
 
 
+def plot_prediction_graphs(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
+    first_prediction = next(
+        (v for k, v in data.items() if k.endswith("predictions")), None
+    )
+    if first_prediction is None:
+        return
+    
+    plot_1d_prediction_graphs(data)
+
+
 def write_data(data: dict[str, list[T.Tensor] | T.Tensor]) -> None:
     for name, obj in data.items():
         if isinstance(obj, list):
@@ -138,6 +148,7 @@ def fetch_experiment_data(experiment: str) -> dict[str, list[T.Tensor] | T.Tenso
 
     return reader.data
 
+
 def page_function(experiment: str) -> Callable:
     def _page_function() -> None:
         experiment_data = fetch_experiment_data(experiment)
@@ -154,7 +165,7 @@ def page_function(experiment: str) -> Callable:
         st.write("## Data")
         st.write("")
         write_data(experiment_data)
-    
+
     return _page_function
 
 

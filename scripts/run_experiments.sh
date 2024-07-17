@@ -1,5 +1,5 @@
 #!/bin/bash
 
-for dir in ./experiments/*; do
-    python3 -m "experiments.$(basename $dir).main"
+for file in ./experiments/*; do
+    python3 -m "experiments.$(basename $file .py)"
 done

@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 
 from utils import train_model_v2
-from utils.data_management import ExperimentWriter
+from utils.data_management import ExperimentDataType, ExperimentWriter
 from utils.models import MLP
 
 
@@ -18,6 +18,7 @@ def run_experiment(
     eval_datasets: dict[str, list[Dataset] | Dataset],
     pred_datasets: dict[str, list[T.Tensor] | T.Tensor],
     pred_ground_truth: dict[str, list[T.Tensor] | T.Tensor],
+    experiment_dtype: ExperimentDataType,
     kan_kwargs: dict[str, Any] = {},
     mlp_kwargs: dict[str, Any] = {},
     device: T.device | None = None,
@@ -33,7 +34,11 @@ def run_experiment(
         f"{model}_{metric}_loss": []
         for model in models
         for metric in ["train", *eval_datasets]
-    } | {f"{model}_{metric}_predictions": [] for model in models for metric in pred_datasets}
+    } | {
+        f"{model}_{metric}_predictions": []
+        for model in models
+        for metric in pred_datasets
+    }
 
     for task_idx, task_dataset in enumerate(tqdm(task_datasets)):
         datasets = {"train": task_dataset} | {
@@ -57,14 +62,17 @@ def run_experiment(
 
                 results[f"{model_name}_{metric}_predictions"].append(predictions)
 
-    experiment_writer = ExperimentWriter(experiment_name)
+    experiment_writer = ExperimentWriter(experiment_name, experiment_dtype)
+
+    experiment_writer.log_config("mlp_architecture", mlp_architecture)
+    experiment_writer.log_config("kan_architecture", kan_architecture)
 
     for k, v in results.items():
         if not isinstance(v[0], T.Tensor):
             v = T.tensor(v)
-        experiment_writer.log(k, v)
-        
+        experiment_writer.log_data(k, v)
+
     for metric, ground_truth in pred_ground_truth.items():
-        experiment_writer.log(f"base_{metric}_predictions", ground_truth)
-    
+        experiment_writer.log_data(f"base_{metric}_predictions", ground_truth)
+
     experiment_writer.write()

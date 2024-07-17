@@ -4,6 +4,7 @@ import torch as T
 from torch.utils.data import Dataset, TensorDataset
 
 from utils import gaussian
+from utils.data_management import ExperimentDataType
 from utils.experiment import run_experiment
 
 EXPERIMENT_NAME = Path(__file__).stem
@@ -43,6 +44,7 @@ def main() -> None:
         {"eval": function_dataset},
         {"function": X},
         {"function": Y, "task": Y_partitioned},
+        ExperimentDataType.function_1d,
         kan_kwargs=dict(
             grid=100,
             grid_range=[0, NUM_PEAKS],
