@@ -66,6 +66,7 @@ def train_model(
 
     model_optimizer = optimizer(model.parameters(), lr=lr)  # type: ignore
 
+    # initialize train / eval dataloaders and results dict
     train_dataset = datasets["train"]
     train_dataloader = DataLoader(train_dataset, batch_size)
     eval_dataloaders = {
@@ -76,13 +77,16 @@ def train_model(
     rolling_loss = 0
     iteration = 0
 
-    for epoch in range(epochs):
+    for _ in range(epochs):
         for X_batch, Y_batch in train_dataloader:
             Y_pred = model(X_batch)
             loss = loss_fn(Y_batch, Y_pred)
             loss.backward()
 
-            eval_loss = eval_loss_fn(Y_batch, Y_pred).item()
+            with T.no_grad():
+                eval_loss = eval_loss_fn(Y_batch, Y_pred).item()
+
+            # update rolling loss
             if iteration == 0:
                 rolling_loss = eval_loss
             else:
@@ -97,6 +101,7 @@ def train_model(
             if iteration % logging_freq == 0:
                 results["train"].append(rolling_loss)
 
+                # calculate average loss of each eval_dataloader
                 with T.no_grad():
                     for name, dataloader in eval_dataloaders.items():
                         losses = []
