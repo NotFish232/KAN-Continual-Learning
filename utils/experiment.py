@@ -83,6 +83,7 @@ def run_experiment(
     None
     """
 
+    # use passed device or cuda if available else cpu
     device = device or T.device("cuda" if T.cuda.is_available() else "cpu")
 
     kan = KAN(kan_architecture, device=device, **kan_kwargs)
@@ -90,6 +91,8 @@ def run_experiment(
 
     models = {"kan": kan, "mlp": mlp}
 
+    # add all metrics to resultst
+    # each metric is of the form {model}_{metric}_{loss|predictions}
     results: dict[str, Any] = {
         f"{model}_{metric}_loss": []
         for model in models
@@ -101,6 +104,7 @@ def run_experiment(
     }
 
     for task_idx, task_dataset in enumerate(tqdm(task_datasets)):
+        # prepare datasets which is the task_dataset + each eval_dataset
         datasets = {"train": task_dataset} | {
             metric: d[task_idx] if isinstance(d, list) else d
             for metric, d in eval_datasets.items()
@@ -109,9 +113,11 @@ def run_experiment(
         for model_name, model in models.items():
             model_results = train_model_v2(model, datasets, **training_kwargs)
 
+            # update results with training results
             for metric, value in model_results.items():
                 results[f"{model_name}_{metric}_loss"].extend(value)
 
+            # update results with each model prediction for each pred_dataset
             for metric, pred_dataset in pred_datasets.items():
                 with T.no_grad():
                     predictions = model(
@@ -124,14 +130,18 @@ def run_experiment(
 
     experiment_writer = ExperimentWriter(experiment_name, experiment_dtype)
 
+    # log some experimental configuration
     experiment_writer.log_config("mlp_architecture", mlp_architecture)
     experiment_writer.log_config("kan_architecture", kan_architecture)
 
+    # values written to experiment_write should be either list[T.Tensor] or T.Tensor
+    # if first element of v is not a T.Tensor assume its supposed to be a scaler tensor and convert
     for k, v in results.items():
         if not isinstance(v[0], T.Tensor):
             v = T.tensor(v)
         experiment_writer.log_data(k, v)
 
+    # add all of the baseline metrics provided in pred_ground_truth into results
     for metric, ground_truth in pred_ground_truth.items():
         experiment_writer.log_data(f"base_{metric}_predictions", ground_truth)
 
