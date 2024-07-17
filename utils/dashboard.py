@@ -20,16 +20,22 @@ def plotly_colors() -> Generator[str, None, None]:
 
     yield from cycle(("red", "blue", "green"))
 
-
-def plot_loss_graphs(experiment_reader: ExperimentReader) -> None:
+@st.cache_data
+def create_loss_graphs(_experiment_reader: ExperimentReader) -> list[go.Figure]:
     """
     Plots the loss graphs of an experiment
+    Cached with `@st.cache_data`
+
+    Returns
+    -------
+    list[go.Figure]
+        List of loss graphs
     """
 
     # maps a metric -> a dict of model -> values
     graphs: dict[str, dict[str, T.Tensor]] = {}
 
-    for k, v in experiment_reader.data.items():
+    for k, v in _experiment_reader.data.items():
         # only process result items that are losses
         if not k.endswith("loss"):
             continue
@@ -42,6 +48,9 @@ def plot_loss_graphs(experiment_reader: ExperimentReader) -> None:
 
         assert isinstance(v, T.Tensor)
         graphs[metric][model] = v
+
+
+    plots = []
 
     # Generated a graph for each metric
     # where each trace is a different model
@@ -59,11 +68,22 @@ def plot_loss_graphs(experiment_reader: ExperimentReader) -> None:
 
         plot = go.Figure(traces)
         plot.update_layout(margin={"t": 0})
-        st.write(f"{metric.capitalize()} Loss")
-        st.plotly_chart(plot)
+        plots.append(plot)
+        # st.write(f"{metric.capitalize()} Loss")
+        # st.plotly_chart(plot)
+    
+    return plots
 
 
-def plot_1d_prediction_graphs(experiment_reader: ExperimentReader) -> None:
+def create_1d_prediction_graph(experiment_reader: ExperimentReader) -> go.Figure:
+    """
+    Creates prediction graphs for 1d functions, i.e., curves
+
+    Returns
+    -------
+    go.Figure
+        Plot with subplots to show model predictions
+    """
     # maps a model -> a dict of task -> values
     predictions: dict[str, dict[str, list[T.Tensor] | T.Tensor]] = {}
 
@@ -152,25 +172,31 @@ def plot_1d_prediction_graphs(experiment_reader: ExperimentReader) -> None:
                         col_idx + 1,
                     )
 
-    st.write("Predictions")
-    st.plotly_chart(plot)
+    return plot
 
 
-def plot_2d_prediction_graphs(experiment_reader: ExperimentReader) -> None:
+def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
     pass
 
 
-def plot_prediction_graphs(experiment_reader: ExperimentReader) -> None:
+@st.cache_data
+def create_prediction_graph(_experiment_reader: ExperimentReader) -> go.Figure:
     """
     Calls either `plot_1d_prediction_graphs` or `plot_2d_prediction_graphs`
     depending on `experiment_reader.experiment_dtype`
+    Cached with `@st.cache_data`
+
+    Returns
+    -------
+    go.Figure
+        Graph of model predictions
     """
 
-    match experiment_reader.experiment_dtype:
+    match _experiment_reader.experiment_dtype:
         case ExperimentDataType.function_1d:
-            plot_1d_prediction_graphs(experiment_reader)
+            return create_1d_prediction_graph(_experiment_reader)
         case ExperimentDataType.function_2d:
-            plot_2d_prediction_graphs(experiment_reader)
+            plot_2d_prediction_graph(_experiment_reader)
 
 
 def write_data(experiment_reader: ExperimentReader) -> None:
@@ -219,8 +245,9 @@ def page_function(experiment: str) -> Callable:
         st.write("## Graphs")
         st.write("")
         st.write("")
-        plot_loss_graphs(experiment_reader)
-        plot_prediction_graphs(experiment_reader)
+        for graph in create_loss_graphs(experiment_reader):
+            st.plotly_chart(graph)
+        st.plotly_chart(create_prediction_graph(experiment_reader))
 
         st.write("## Data")
         st.write("")
