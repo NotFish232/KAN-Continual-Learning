@@ -23,6 +23,62 @@ def run_experiment(
     mlp_kwargs: dict[str, Any] = {},
     device: T.device | None = None,
 ) -> None:
+    """
+    Runs an experiment on the models provided keeping track of various metrics,
+    such as training / evaluation loss and predictions on datasets,
+    saves these results to file using `ExperimentWriter` which can later be read
+    with `ExperimentReader`
+
+    Results are saved as the following:
+        - task_dataset has an associated train_loss of type T.Tensor[T.float32], which is same len as eval results
+        - each eval_dataset has an associated ${model}_${eval_dataset_name}_loss entry of type T.Tensor[T.float32]
+        - each pred_dataset has an associated ${model}_$(pred_dataset_name)_predictions of type list[T.Tensor] and len(task_datasets)
+        - each pred_ground_truth has an associated base_${metric}_{predictions} which is same as value passed in
+
+    Parameters
+    ----------
+    experiment_name : str
+        Name of the experiment, used for writing / reading the experiment
+
+    kan_architecture : list[int]
+        Represents the width of each layer of the kan
+
+    mlp_architecture : list[int]
+        Represents  the width of each layer of the mlp
+
+    task_datasets : list[Dataset]
+        Dataset for each individual task in continual learning
+
+    eval_datasets : dict[str, list[Dataset] | Dataset]
+        Dataset to evaluate metrics on, i.e. RMSE Loss by default
+        if type list[Dataset] elements are evaluated only on corresponding tasks
+        if type Dataset elements are evaluated on all tasks
+
+    pred_datasets : dict[str, list[T.Tensor] | T.Tensor]
+        Tensors to save model predictions for
+        if type list[T.Tensor] predictions are evaluated only on corresponding tasks
+        if type T.Tensor predictions are evaluated on all tasks
+
+    pred_ground_truth : dict[str, list[T.Tensor] | T.Tensor]
+        Ground truth labels for predictions
+
+    experiment_dtype : ExperimentDataType
+        Type for dataset, i.e., 1d functions, 2d functions, images, etc
+
+    kan_kwargs : dict[str, Any], optional
+        Additional kwargs to pass to kan constructor, by default {}
+
+    mlp_kwargs : dict[str, Any], optional
+        Additional kwargs to pass to mlp constructor, by default {}
+
+    device : T.device | None, optional
+        Device to run on, defaults to cuda if available else cpu
+
+    Returns
+    ----------
+    None
+    """
+
     device = device or T.device("cuda" if T.cuda.is_available() else "cpu")
 
     kan = KAN(kan_architecture, device=device, **kan_kwargs)
