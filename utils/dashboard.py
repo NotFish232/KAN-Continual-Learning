@@ -33,8 +33,8 @@ def plot_loss_graphs(experiment_reader: ExperimentReader) -> None:
         # only process result items that are losses
         if not k.endswith("loss"):
             continue
-        
-        # grab
+
+        # grab the model and metric from the result key
         model, metric, _ = k.rsplit("_", 2)
 
         if metric not in graphs:
@@ -43,6 +43,8 @@ def plot_loss_graphs(experiment_reader: ExperimentReader) -> None:
         assert isinstance(v, T.Tensor)
         graphs[metric][model] = v
 
+    # Generated a graph for each metric
+    # where each trace is a different model
     for metric, metric_data in graphs.items():
         traces = []
 
@@ -64,9 +66,6 @@ def plot_loss_graphs(experiment_reader: ExperimentReader) -> None:
 def plot_1d_prediction_graphs(experiment_reader: ExperimentReader) -> None:
     # maps a model -> a dict of task -> values
     predictions: dict[str, dict[str, list[T.Tensor] | T.Tensor]] = {}
-    num_cols = -1
-    max_length = -1
-    graph_range = [0.0, 1.0]
 
     for k, v in experiment_reader.data.items():
         if not k.endswith("predictions"):
@@ -79,25 +78,41 @@ def plot_1d_prediction_graphs(experiment_reader: ExperimentReader) -> None:
 
         predictions[model][metric] = v
 
-        if model == "base":
-            if isinstance(v, list):
-                num_cols = len(v)
-            else:
-                max_length = len(v)
-                graph_range = [T.min(v).item() - 0.25, T.max(v).item() + 0.25]
+    assert "base" in predictions
 
-    plot = make_subplots(rows=len(predictions), cols=num_cols)
+    # get function specific data like num tasks, num points, and graph range
+    # from the metric baselines
+    num_tasks = None
+    num_points = None
+    graph_range = None
+
+    for v in predictions["base"].values():
+        if isinstance(v, list):
+            # num tasks is len of list since predictions are made each task
+            num_tasks = len(v)
+        else:
+            # num points is len of v if it is a tensor because then v represents the baseline for the whole graph
+            # as such, finding the min and max of v will let you find the range of the function
+            num_points = len(v)
+            graph_range = [T.min(v).item() - 0.25, T.max(v).item() + 0.25]
+
+    # make sure all of the function specific data was found from the baseline
+    assert num_tasks is not None and num_points is not None and graph_range is not None
+
+    # create subplots where each row is a model and each column is a task
+    plot = make_subplots(rows=len(predictions), cols=num_tasks)
     plot.update_xaxes(showticklabels=False)
     plot.update_yaxes(showticklabels=False, range=graph_range)
     plot.update_layout(margin={"t": 0})
 
     for metric, values in predictions["base"].items():
+        # plot all non task specific baselines on all subplots
         if isinstance(values, T.Tensor):
             for row_idx in range(len(predictions)):
-                for col_idx in range(num_cols):
+                for col_idx in range(num_tasks):
                     plot.add_trace(
                         go.Scatter(
-                            x=T.linspace(0, num_cols, len(values)),
+                            x=T.linspace(0, num_tasks, len(values)),
                             y=values.squeeze(),
                             opacity=0.1,
                             line={"color": "lightblue"},
@@ -112,13 +127,17 @@ def plot_1d_prediction_graphs(experiment_reader: ExperimentReader) -> None:
     for row_idx, ((model, task_data), color) in enumerate(
         zip(predictions.items(), plotly_colors())
     ):
-        for col_idx in range(num_cols):
+        for col_idx in range(num_tasks):
             for metric, values in task_data.items():
                 if isinstance(values, list):
-                    if len(values[col_idx]) == max_length:
-                        x = T.linspace(0, num_cols, max_length)
+                    # if prediction is the same length as the max function length baseline
+                    # then plot it over the entire graph
+                    # otherwise its a graph of a task and shold be plotted on a subset of the graph
+                    if len(values[col_idx]) == num_points:
+                        x = T.linspace(0, num_tasks, num_points)
                     else:
                         x = T.linspace(col_idx, col_idx + 1, len(values[col_idx]))
+
                     y = values[col_idx]
                     plot.add_trace(
                         go.Scatter(
@@ -132,6 +151,7 @@ def plot_1d_prediction_graphs(experiment_reader: ExperimentReader) -> None:
                         row_idx + 1,
                         col_idx + 1,
                     )
+
     st.write("Predictions")
     st.plotly_chart(plot)
 
