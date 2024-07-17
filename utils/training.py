@@ -1,10 +1,10 @@
-from typing import Callable, Type
+from typing import Any, Callable, Type
 
 import torch as T
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
-from typing import Any
+
 
 def RMSE_loss(input: T.Tensor, target: T.Tensor, **mse_kwargs: Any) -> T.Tensor:
     """
