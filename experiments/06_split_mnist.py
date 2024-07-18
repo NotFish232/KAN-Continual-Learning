@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 import torch as T
+from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import ConcatDataset, Dataset, Subset, TensorDataset
 
@@ -15,7 +16,7 @@ MNIST_EVAL_PATH = "./data/MNIST/mnist_eval.csv"
 IMG_SIZE = 28
 
 
-KAN_ARCHITECTURE = [IMG_SIZE, 8, 10]
+KAN_ARCHITECTURE = [IMG_SIZE**2, 4, 10]
 KAN_GRID_SIZE = 50
 MLP_ARCHICTURE = [IMG_SIZE**2, 128, 128, 64, 10]
 
@@ -32,12 +33,14 @@ def load_task_datasets(path: str, device: T.device) -> list[Dataset]:
     data = pd.read_csv(path).to_numpy()
 
     X = T.tensor(data[:, 1:], dtype=T.float32, device=device) / 255
-    Y = T.tensor(data[:, :1], device=device)
+    Y = T.eye(10, device=device)[T.asarray(data[:, 0])]
 
     datasets: list[Dataset] = []
 
     for label_1, label_2 in zip(range(0, 11, 2), range(1, 11, 2)):
-        indices = ((Y == label_1) | (Y == label_2)).squeeze()
+        indices = (
+            (Y.argmax(dim=-1) == label_1) | (Y.argmax(dim=-1) == label_2)
+        ).squeeze()
         x_batch = X[indices]
         y_batch = Y[indices]
 
@@ -86,7 +89,11 @@ def main() -> None:
         ExperimentDataType.image,
         kan_kwargs={"grid": KAN_GRID_SIZE},
         mlp_kwargs={"activation_function": F.leaky_relu},
-        training_kwargs={"epochs": NUM_EPOCHS},
+        training_kwargs={
+            "epochs": NUM_EPOCHS,
+            "loss_fn": nn.CrossEntropyLoss(),
+            "eval_loss_fn": nn.CrossEntropyLoss(),
+        },
     )
 
 
