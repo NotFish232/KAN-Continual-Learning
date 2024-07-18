@@ -1,10 +1,10 @@
+from dataclasses import dataclass
 from typing import Any, Callable, Type
 
 import torch as T
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
-from dataclasses import dataclass
 from typing_extensions import Self
 
 

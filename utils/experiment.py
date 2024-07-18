@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from utils.data_management import ExperimentDataType, ExperimentWriter
 from utils.models import MLP
-from utils.training import train_model, TrainModelArguments
+from utils.training import TrainModelArguments, train_model
 
 
 def run_experiment(
