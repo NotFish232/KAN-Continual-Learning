@@ -202,15 +202,15 @@ def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
     assert num_tasks is not None and num_points is not None and graph_range is not None
 
     # 2d task so num_points represents num_points on each axis
-    num_points = int(math.sqrt(num_points))
+    num_points = round(math.sqrt(num_points))
 
     # create subplots where each row is a model and each column is a task
     plot = make_subplots(
-        rows=len(predictions),
+        rows=len(predictions) - 1,
         cols=num_tasks,
         specs=[
             [{"type": "surface"} for _ in range(num_tasks)]
-            for _ in range(len(predictions))
+            for _ in range(len(predictions) - 1)
         ],
     )
     # add plot title
@@ -222,46 +222,48 @@ def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
             f"scene{i}": {
                 axis: {"showticklabels": False} for axis in ("xaxis", "yaxis", "zaxis")
             }
-            for i in range(1, num_tasks * len(predictions) + 1)
+            for i in range(1, num_tasks * len(predictions))
         }
     )
 
     for metric, values in predictions["base"].items():
         # plot all non task specific baselines on all subplots
         if isinstance(values, T.Tensor):
-            for row_idx in range(len(predictions)):
+            for row_idx in range(len(predictions) - 1):
                 for col_idx in range(num_tasks):
                     plot.add_trace(
                         go.Surface(
-                            z=values.reshape(*([int(math.sqrt(num_points))] * 4), 1)
-                            .permute(0, 2, 1, 3, 4)
+                            z=values.reshape([round(math.sqrt(num_points))] * 4)
+                            .permute(0, 2, 1, 3)
                             .reshape(num_points, num_points),
                             name=f"{model.capitalize()} {metric.capitalize()}",
                             legendgroup=model,
                             showlegend=row_idx + col_idx == 0,
                             opacity=0.1,
                             showscale=False,
+                            hoverinfo="skip",
                         ),
                         row_idx + 1,
                         col_idx + 1,
                     )
 
-    for row_idx, ((model, task_data), color) in enumerate(
-        zip(predictions.items(), plotly_colors())
-    ):
+    # don't draw other baseline stuff for 2d
+    del predictions["base"]
+
+    for row_idx, (model, task_data) in enumerate(predictions.items()):
         for col_idx in range(num_tasks):
             for metric, values in task_data.items():
-                if isinstance(values, list) and model != "base":
+                if isinstance(values, list):
                     plot.add_trace(
                         go.Surface(
-                            z=values[col_idx]
-                            .reshape(*([int(math.sqrt(num_points))] * 4), 1)
-                            .permute(0, 2, 1, 3, 4)
+                            z=values[col_idx].reshape([round(math.sqrt(num_points))] * 4)
+                            .permute(0, 2, 1, 3)
                             .reshape(num_points, num_points),
                             name=f"{model.capitalize()} {metric.capitalize()}",
                             legendgroup=model,
                             showlegend=col_idx == 0,
                             showscale=False,
+                            hoverinfo="skip",
                         ),
                         row_idx + 1,
                         col_idx + 1,
