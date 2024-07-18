@@ -5,7 +5,7 @@ from kan import KAN
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from utils import train_model_v2
+from utils.training import train_model
 from utils.data_management import ExperimentDataType, ExperimentWriter
 from utils.models import MLP
 
@@ -111,10 +111,10 @@ def run_experiment(
         }
 
         for model_name, model in models.items():
-            model_results = train_model_v2(model, datasets, **training_kwargs)
+            training_results = train_model(model, datasets, **training_kwargs)
 
             # update results with training results
-            for metric, value in model_results.items():
+            for metric, value in training_results.items():
                 results[f"{model_name}_{metric}_loss"].extend(value)
 
             # update results with each model prediction for each pred_dataset
