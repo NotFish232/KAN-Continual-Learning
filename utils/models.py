@@ -14,12 +14,12 @@ class MLP(nn.Module):
     def __init__(
         self: Self,
         dimensions: list[int],
-        activation_function: Callable = F.tanh,
+        activation_fn: Callable = F.tanh,
     ) -> None:
         super().__init__()
 
         self.dimensions = dimensions
-        self.activation_function = activation_function
+        self.activation_fn = activation_fn
 
         self.layers = nn.ModuleList()
         for dim_1, dim_2 in zip(dimensions, dimensions[1:]):
@@ -29,5 +29,5 @@ class MLP(nn.Module):
         for i, layer in enumerate(self.layers):
             x = layer(x)
             if i != len(self.layers) - 1:
-                x = self.activation_function(x)
+                x = self.activation_fn(x)
         return x

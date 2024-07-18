@@ -89,7 +89,7 @@ def main() -> None:
         prediction_ground_truths,
         ExperimentDataType.image,
         kan_kwargs={"grid": KAN_GRID_SIZE},
-        mlp_kwargs={"activation_function": F.leaky_relu},
+        mlp_kwargs={"acitvation_fn": F.leaky_relu},
         training_args=TrainModelArguments(
             num_epochs=NUM_EPOCHS,
             loss_fn=nn.CrossEntropyLoss(),
