@@ -7,6 +7,7 @@ from torch.utils.data import Dataset, TensorDataset
 from utils import gaussian
 from utils.data_management import ExperimentDataType
 from utils.experiment import run_experiment
+from utils.training import TrainModelArguments
 
 EXPERIMENT_NAME = Path(__file__).stem
 
@@ -39,11 +40,7 @@ def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
         .permute(0, 2, 1, 3, 4)
         .reshape(-1, 2)
     )
-    Y = (
-        Y.reshape([int(math.sqrt(NUM_POINTS))] * 4)
-        .permute(0, 2, 1, 3)
-        .reshape(-1, 1)
-    )
+    Y = Y.reshape([int(math.sqrt(NUM_POINTS))] * 4).permute(0, 2, 1, 3).reshape(-1, 1)
 
     return X, Y
 
@@ -76,7 +73,7 @@ def main() -> None:
             "sp_trainable": False,
             "sb_trainable": False,
         },
-        training_kwargs={"epochs": NUM_EPOCHS},
+        training_args=TrainModelArguments(num_epochs=NUM_EPOCHS),
     )
 
 

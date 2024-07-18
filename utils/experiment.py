@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from utils.data_management import ExperimentDataType, ExperimentWriter
 from utils.models import MLP
-from utils.training import train_model
+from utils.training import train_model, TrainModelArguments
 
 
 def run_experiment(
@@ -22,7 +22,7 @@ def run_experiment(
     device: T.device | None = None,
     kan_kwargs: dict[str, Any] = {},
     mlp_kwargs: dict[str, Any] = {},
-    training_kwargs: dict[str, Any] = {},
+    training_args: TrainModelArguments = TrainModelArguments(),
 ) -> None:
     """
     Runs an experiment on the models provided keeping track of various metrics,
@@ -75,8 +75,8 @@ def run_experiment(
     mlp_kwargs : dict[str, Any], optional
         Additional kwargs to pass to mlp constructor, by default {}
 
-    training_kwargs : dict[str, Any], optional
-        Additional kwargs to pass to training function, by default {}
+    training_args : TrainModelArguments, optional
+        Additional kwargs to pass to training function, by default TrainModelArguments()
 
     Returns
     ----------
@@ -111,7 +111,7 @@ def run_experiment(
         }
 
         for model_name, model in models.items():
-            training_results = train_model(model, datasets, **training_kwargs)
+            training_results = train_model(model, datasets, **training_args.to_dict())
 
             # update results with training results
             for metric, value in training_results.items():

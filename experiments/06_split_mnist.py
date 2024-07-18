@@ -8,6 +8,7 @@ from torch.utils.data import ConcatDataset, Dataset, Subset, TensorDataset
 
 from utils.data_management import ExperimentDataType
 from utils.experiment import run_experiment
+from utils.training import TrainModelArguments
 
 EXPERIMENT_NAME = Path(__file__).stem
 
@@ -89,11 +90,11 @@ def main() -> None:
         ExperimentDataType.image,
         kan_kwargs={"grid": KAN_GRID_SIZE},
         mlp_kwargs={"activation_function": F.leaky_relu},
-        training_kwargs={
-            "epochs": NUM_EPOCHS,
-            "loss_fn": nn.CrossEntropyLoss(),
-            "eval_loss_fn": nn.CrossEntropyLoss(),
-        },
+        training_args=TrainModelArguments(
+            num_epochs=NUM_EPOCHS,
+            loss_fn=nn.CrossEntropyLoss(),
+            eval_loss_fn=nn.CrossEntropyLoss(),
+        ),
     )
 
 

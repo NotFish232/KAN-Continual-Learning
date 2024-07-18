@@ -4,6 +4,8 @@ import torch as T
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
+from dataclasses import dataclass
+from typing_extensions import Self
 
 
 def RMSE_loss(input: T.Tensor, target: T.Tensor, **mse_kwargs: Any) -> T.Tensor:
@@ -20,7 +22,7 @@ def RMSE_loss(input: T.Tensor, target: T.Tensor, **mse_kwargs: Any) -> T.Tensor:
 
     mse_kwargs : dict[str, Any]
         Kwargs to pass to F.mse_loss
-        
+
     Returns
     -------
     T.Tensor
@@ -29,12 +31,28 @@ def RMSE_loss(input: T.Tensor, target: T.Tensor, **mse_kwargs: Any) -> T.Tensor:
     return T.sqrt(F.mse_loss(input, target, **mse_kwargs))
 
 
+@dataclass
+class TrainModelArguments:
+    model: nn.Module | None = None
+    datasets: dict[str, Dataset] | None = None
+    optimizer: Type[optim.Optimizer] | None = None
+    loss_fn: Callable | None = None
+    num_epochs: int | None = None
+    batch_size: int | None = None
+    eval_loss_fn: Callable | None = None
+    eval_batch_size: int | None = None
+    logging_freq: int | None = None
+
+    def to_dict(self: Self) -> dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if v is not None}
+
+
 def train_model(
     model: nn.Module,
     datasets: dict[str, Dataset],
     optimizer: Type[optim.Optimizer] = optim.SGD,
     loss_fn: Callable = nn.MSELoss(),
-    epochs: int = 500,
+    num_epochs: int = 500,
     lr: float = 1e-2,
     batch_size: int = 8,
     eval_loss_fn: Callable = RMSE_loss,
@@ -59,7 +77,7 @@ def train_model(
     loss_fn : Callable, optional
         Loss function for training, by default nn.MSELoss()
 
-    epochs : int, optional
+    num_epochs : int, optional
         Number of epochs to train for, by default 500
 
     lr : float, optional
@@ -80,7 +98,7 @@ def train_model(
     Returns
     -------
     dict[str, list[float]]
-        Loss metrics for each dataset in datasets 
+        Loss metrics for each dataset in datasets
     """
 
     model_optimizer = optimizer(model.parameters(), lr=lr)  # type: ignore
@@ -96,7 +114,7 @@ def train_model(
     rolling_loss = 0
     iteration = 0
 
-    for _ in range(epochs):
+    for _ in range(num_epochs):
         for X_batch, Y_batch in train_dataloader:
             Y_pred = model(X_batch)
             loss = loss_fn(Y_batch, Y_pred)
