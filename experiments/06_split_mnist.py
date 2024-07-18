@@ -17,8 +17,8 @@ MNIST_EVAL_PATH = "./data/MNIST/mnist_eval.csv"
 IMG_SIZE = 28
 
 
-KAN_ARCHITECTURE = [IMG_SIZE**2, 4, 10]
-KAN_GRID_SIZE = 50
+KAN_ARCHITECTURE = [IMG_SIZE**2, 1, 10]
+KAN_GRID_SIZE = 25
 MLP_ARCHICTURE = [IMG_SIZE**2, 128, 128, 64, 10]
 
 NUM_EPOCHS = 1
@@ -89,7 +89,7 @@ def main() -> None:
         prediction_ground_truths,
         ExperimentDataType.image,
         kan_kwargs={"grid": KAN_GRID_SIZE},
-        mlp_kwargs={"acitvation_fn": F.leaky_relu},
+        mlp_kwargs={"activation_fn": F.leaky_relu},
         training_args=TrainModelArguments(
             num_epochs=NUM_EPOCHS,
             loss_fn=nn.CrossEntropyLoss(),
