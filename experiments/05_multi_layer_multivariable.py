@@ -11,7 +11,7 @@ from utils.experiment import run_experiment
 EXPERIMENT_NAME = Path(__file__).stem
 
 NUM_PEAKS = 2
-NUM_POINTS = 128
+NUM_POINTS = 64
 GAUSSIAN_STD_1 = 0.2
 GAUSSIAN_STD_2 = 0.1
 

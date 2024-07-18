@@ -31,10 +31,10 @@ def run_experiment(
     with `ExperimentReader`
 
     Results are saved as the following:
-        - task_dataset has an associated train_loss of type T.Tensor[T.float32], which is same len as eval results
-        - each eval_dataset has an associated ${model}_${eval_dataset_name}_loss entry of type T.Tensor[T.float32]
-        - each pred_dataset has an associated ${model}_$(pred_dataset_name)_predictions of type list[T.Tensor] and len(task_datasets)
-        - each pred_ground_truth has an associated base_${metric}_{predictions} which is same as value passed in
+    * task_dataset has an associated train_loss of type T.Tensor[T.float32], which is same len as eval results
+    * each eval_dataset has an associated ${model}_${eval_dataset_name}_loss entry of type T.Tensor[T.float32]
+    * each pred_dataset has an associated ${model}_$(pred_dataset_name)_predictions of type list[T.Tensor] and len(task_datasets)
+    * each pred_ground_truth has an associated base_${metric}_{predictions} which is same as value passed in
 
     Parameters
     ----------

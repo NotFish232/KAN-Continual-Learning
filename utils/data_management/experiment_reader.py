@@ -10,6 +10,9 @@ from .shared import EXPERIMENT_ROOT, ExperimentDataType
 
 
 class ExperimentReader:
+    """
+    Helper class to read experiments written by `ExperimentWriter`
+    """
     def __init__(self: Self, experiment_name: str) -> None:
         self.experiment_name = experiment_name
         self.experiment_dtype = ExperimentDataType.none
