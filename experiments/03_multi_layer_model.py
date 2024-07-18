@@ -57,7 +57,7 @@ def main() -> None:
             "sp_trainable": False,
             "sb_trainable": False,
         },
-        training_kwargs={"epoch": NUM_EPOCHS}
+        training_kwargs={"epochs": NUM_EPOCHS}
     )
 
 
