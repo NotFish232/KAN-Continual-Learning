@@ -1,5 +1,7 @@
 #!/bin/bash
 
 for file in ./experiments/*; do
-    python3 -m "experiments.$(basename $file .py)"
+    if [[ $file == *.py ]]; then
+        python3 -m "experiments.$(basename $file .py)"
+    fi
 done
