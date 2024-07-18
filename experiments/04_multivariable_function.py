@@ -40,7 +40,7 @@ def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
         .reshape(-1, 2)
     )
     Y = (
-        Y.reshape(*([int(math.sqrt(NUM_POINTS))] * 4))
+        Y.reshape([int(math.sqrt(NUM_POINTS))] * 4)
         .permute(0, 2, 1, 3)
         .reshape(-1, 1)
     )
