@@ -5,9 +5,9 @@ from kan import KAN
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from utils.training import train_model
 from utils.data_management import ExperimentDataType, ExperimentWriter
 from utils.models import MLP
+from utils.training import train_model
 
 
 def run_experiment(

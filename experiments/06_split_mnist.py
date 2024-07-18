@@ -1,11 +1,12 @@
 from pathlib import Path
-from torch.utils.data import Dataset, TensorDataset, Subset, ConcatDataset
-from torch.nn import functional as F
-import torch as T
-import pandas as pd
-from utils.experiment import run_experiment
-from utils.data_management import ExperimentDataType
 
+import pandas as pd
+import torch as T
+from torch.nn import functional as F
+from torch.utils.data import ConcatDataset, Dataset, Subset, TensorDataset
+
+from utils.data_management import ExperimentDataType
+from utils.experiment import run_experiment
 
 EXPERIMENT_NAME = Path(__file__).stem
 
