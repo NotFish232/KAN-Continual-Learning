@@ -236,40 +236,36 @@ def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
                             z=values.reshape(*([int(math.sqrt(num_points))] * 4), 1)
                             .permute(0, 2, 1, 3, 4)
                             .reshape(num_points, num_points),
-                            showscale=False,
+                            name=f"{model.capitalize()} {metric.capitalize()}",
+                            legendgroup=model,
+                            showlegend=row_idx + col_idx == 0,
                             opacity=0.1,
+                            showscale=False,
                         ),
                         row_idx + 1,
                         col_idx + 1,
                     )
 
-    # for row_idx, ((model, task_data), color) in enumerate(
-    #     zip(predictions.items(), plotly_colors())
-    # ):
-    #     for col_idx in range(num_tasks):
-    #         for metric, values in task_data.items():
-    #             if isinstance(values, list):
-    #                 # if prediction is the same length as the max function length baseline
-    #                 # then plot it over the entire graph
-    #                 # otherwise its a graph of a task and shold be plotted on a subset of the graph
-    #                 if len(values[col_idx]) == num_points:
-    #                     x = T.linspace(0, num_tasks, num_points)
-    #                 else:
-    #                     x = T.linspace(col_idx, col_idx + 1, len(values[col_idx]))
-
-    #                 y = values[col_idx]
-    #                 plot.add_trace(
-    #                     go.Scatter(
-    #                         x=x.squeeze(),
-    #                         y=y.squeeze(),
-    #                         line={"color": color},
-    #                         name=f"{model.capitalize()} {metric.capitalize()}",
-    #                         legendgroup=model,
-    #                         showlegend=col_idx == 0,
-    #                     ),
-    #                     row_idx + 1,
-    #                     col_idx + 1,
-    #                 )
+    for row_idx, ((model, task_data), color) in enumerate(
+        zip(predictions.items(), plotly_colors())
+    ):
+        for col_idx in range(num_tasks):
+            for metric, values in task_data.items():
+                if isinstance(values, list) and model != "base":
+                    plot.add_trace(
+                        go.Surface(
+                            z=values[col_idx]
+                            .reshape(*([int(math.sqrt(num_points))] * 4), 1)
+                            .permute(0, 2, 1, 3, 4)
+                            .reshape(num_points, num_points),
+                            name=f"{model.capitalize()} {metric.capitalize()}",
+                            legendgroup=model,
+                            showlegend=col_idx == 0,
+                            showscale=False,
+                        ),
+                        row_idx + 1,
+                        col_idx + 1,
+                    )
 
     st.plotly_chart(plot)
 

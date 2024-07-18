@@ -15,9 +15,9 @@ GAUSSIAN_STD = 0.2
 
 KAN_ARCHITECTURE = [1, 4, 1]
 KAN_GRID_SIZE = 100
-MLP_ARCHICTURE = [1, 16, 16, 1]
+MLP_ARCHICTURE = [1, 32, 32, 1]
 
-NUM_EPOCHS = 100
+NUM_EPOCHS = 200
 
 
 def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
