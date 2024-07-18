@@ -17,6 +17,8 @@ KAN_ARCHITECTURE = [1, 4, 1]
 KAN_GRID_SIZE = 100
 MLP_ARCHICTURE = [1, 16, 16, 1]
 
+NUM_EPOCHS = 100
+
 
 def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
     X = T.linspace(0, NUM_PEAKS, NUM_POINTS, device=device).unsqueeze(1)
@@ -55,6 +57,7 @@ def main() -> None:
             "sp_trainable": False,
             "sb_trainable": False,
         },
+        training_kwargs={"epoch": NUM_EPOCHS}
     )
 
 

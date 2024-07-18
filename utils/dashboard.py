@@ -1,3 +1,4 @@
+import math
 from itertools import cycle
 from typing import Callable, Generator
 
@@ -6,7 +7,6 @@ import torch as T
 from data_management import ExperimentDataType, ExperimentReader  # type: ignore
 from plotly import graph_objects as go  # type: ignore
 from plotly.subplots import make_subplots  # type: ignore
-import math
 
 
 def plotly_colors() -> Generator[str, None, None]:

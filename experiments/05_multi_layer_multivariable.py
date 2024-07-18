@@ -11,13 +11,15 @@ from utils.experiment import run_experiment
 EXPERIMENT_NAME = Path(__file__).stem
 
 NUM_PEAKS = 2
-NUM_POINTS = 100
+NUM_POINTS = 128
 GAUSSIAN_STD_1 = 0.2
 GAUSSIAN_STD_2 = 0.1
 
 KAN_ARCHITECTURE = [2, 4, 1]
 KAN_GRID_SIZE = 50
-MLP_ARCHICTURE = [2, 16, 16, 1]
+MLP_ARCHICTURE = [2, 32, 32, 1]
+
+NUM_EPOCHS = 20
 
 
 def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
@@ -74,7 +76,7 @@ def main() -> None:
             "sp_trainable": False,
             "sb_trainable": False,
         },
-        training_kwargs={"epochs": 50},
+        training_kwargs={"epochs": NUM_EPOCHS},
     )
 
 
