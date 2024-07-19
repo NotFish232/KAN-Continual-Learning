@@ -117,11 +117,15 @@ def train_model(
     for _ in range(num_epochs):
         for X_batch, Y_batch in train_dataloader:
             Y_pred = model(X_batch)
-            loss = loss_fn(Y_batch, Y_pred)
+
+            loss = loss_fn(Y_pred, Y_batch)
             loss.backward()
 
+            model_optimizer.step()
+            model_optimizer.zero_grad()
+
             with T.no_grad():
-                eval_loss = eval_loss_fn(Y_batch, Y_pred).item()
+                eval_loss = eval_loss_fn(Y_pred, Y_batch).item()
 
             # update rolling loss
             if iteration == 0:
@@ -129,9 +133,6 @@ def train_model(
             else:
                 n = min(iteration, logging_freq)
                 rolling_loss = (rolling_loss * (n - 1) + eval_loss) / n
-
-            model_optimizer.step()
-            model_optimizer.zero_grad()
 
             iteration += 1
 
@@ -144,7 +145,7 @@ def train_model(
                         losses = []
                         for X_batch, Y_batch in dataloader:
                             Y_pred = model(X_batch)
-                            loss = eval_loss_fn(Y_batch, Y_pred)
+                            loss = eval_loss_fn(Y_pred, Y_batch)
                             losses.append(loss.item())
 
                         results[name].append(sum(losses) / len(losses))
