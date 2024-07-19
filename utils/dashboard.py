@@ -256,7 +256,8 @@ def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
                 if isinstance(values, list):
                     plot.add_trace(
                         go.Surface(
-                            z=values[col_idx].reshape([round(math.sqrt(num_points))] * 4)
+                            z=values[col_idx]
+                            .reshape([round(math.sqrt(num_points))] * 4)
                             .permute(0, 2, 1, 3)
                             .reshape(num_points, num_points),
                             name=f"{model.capitalize()} {metric.capitalize()}",
@@ -291,6 +292,8 @@ def write_data(experiment_reader: ExperimentReader) -> None:
     """
 
     for name, obj in experiment_reader.data.items():
+        if isinstance(obj, dict):
+            st.write(f"{name}: { {k for k in obj.keys()} }")
         if isinstance(obj, list):
             st.write(f"{name}: [{obj[0].shape} (x{len(obj)})]")
         else:
