@@ -90,17 +90,9 @@ def run_experiment(
 
     models = {"kan": kan, "mlp": mlp}
 
-    # add all metrics to resultst
-    # each metric is of the form {model}_{metric}_{loss|predictions}
-    results: dict[str, Any] = {
-        f"{model}_{metric}_loss": []
-        for model in models
-        for metric in ["train", *eval_datasets]
-    } | {
-        f"{model}_{metric}_predictions": []
-        for model in models
-        for metric in pred_datasets
-    }
+    # all metric evaluations and predictions
+    # each metric is of the form {model}_{dataset}_{{metric}|predictions}
+    results: dict[str, Any] = {}
 
     for task_idx, task_dataset in enumerate(task_datasets):
         # prepare datasets which is the task_dataset + each eval_dataset
@@ -119,7 +111,9 @@ def run_experiment(
 
             # update results with training results
             for metric, value in training_results.items():
-                results[f"{model_name}_{metric}_loss"].extend(value)
+                if f"{model_name}_{metric}" not in results:
+                    results[f"{model_name}_{metric}"] = []
+                results[f"{model_name}_{metric}"].extend(value)
 
             # update results with each model prediction for each pred_dataset
             for metric, pred_dataset in pred_datasets.items():
@@ -130,6 +124,8 @@ def run_experiment(
                         else pred_dataset
                     )
 
+                if f"{model_name}_{metric}_predictions" not in results:
+                    results[f"{model_name}_{metric}_predictions"] = []
                 results[f"{model_name}_{metric}_predictions"].append(predictions)
 
     experiment_writer = ExperimentWriter(experiment_name, experiment_dtype)

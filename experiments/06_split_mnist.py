@@ -8,7 +8,7 @@ from torch.utils.data import ConcatDataset, Dataset, Subset, TensorDataset
 
 from utils.data_management import ExperimentDataType
 from utils.experiment import run_experiment
-from utils.training import TrainModelArguments
+from utils.training import TrainModelArguments, calculate_accuracy
 
 EXPERIMENT_NAME = Path(__file__).stem
 
@@ -71,13 +71,13 @@ def main() -> None:
         prediction_per_task_datasets.append(prediction_dataset)
         ground_truths_per_task.append(ground_truths)
 
-    eval_datasets["task"] = eval_per_task_datasets
-    prediction_datasets["task"] = prediction_per_task_datasets
-    prediction_ground_truths["task"] = ground_truths_per_task
+    eval_datasets["eval"] = eval_per_task_datasets
+    prediction_datasets["eval"] = prediction_per_task_datasets
+    prediction_ground_truths["eval"] = ground_truths_per_task
 
-    eval_datasets["complete"] = ConcatDataset(eval_per_task_datasets)
-    prediction_datasets["complete"] = T.concat(prediction_per_task_datasets)
-    prediction_ground_truths["complete"] = T.concat(ground_truths_per_task)
+    eval_datasets["whole"] = ConcatDataset(eval_per_task_datasets)
+    prediction_datasets["whole"] = T.concat(prediction_per_task_datasets)
+    prediction_ground_truths["whole"] = T.concat(ground_truths_per_task)
 
     run_experiment(
         EXPERIMENT_NAME,
@@ -93,7 +93,7 @@ def main() -> None:
         training_args=TrainModelArguments(
             num_epochs=NUM_EPOCHS,
             loss_fn=nn.CrossEntropyLoss(),
-            eval_loss_fn=nn.CrossEntropyLoss(),
+            eval_fns={"loss": nn.CrossEntropyLoss(), "acc": calculate_accuracy},
         ),
     )
 

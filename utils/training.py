@@ -9,6 +9,32 @@ from tqdm import tqdm
 from typing_extensions import Self
 
 
+def calculate_accuracy(input: T.Tensor, target: T.Tensor) -> T.Tensor:
+    """
+    Calculates accuracy on two tensors by argmaxing last dim first
+
+    Parameters
+    ----------
+    input : T.Tensor
+        Input tensor
+
+    target : T.Tensor
+        Target tensor to compare to
+
+    Returns
+    -------
+    T.Tensor
+        Dim 0 tensor representing accuracy from 0 => 100
+    """
+    
+    arged_input = T.argmax(input, dim=-1)
+    arged_target = T.argmax(target, dim=-1)
+
+    accuracy = T.mean((arged_input == arged_target).to(T.float32))
+
+    return 100 * accuracy
+
+
 def RMSE_loss(input: T.Tensor, target: T.Tensor, **mse_kwargs: Any) -> T.Tensor:
     """
     Calculates Root Mean Squared Error
@@ -40,7 +66,7 @@ class TrainModelArguments:
     loss_fn: Callable | None = None
     num_epochs: int | None = None
     batch_size: int | None = None
-    eval_loss_fn: Callable | None = None
+    eval_fns: dict[str, Callable[[T.Tensor, T.Tensor], T.Tensor]] | None = None
     eval_batch_size: int | None = None
     logging_freq: int | None = None
     pbar_description: str | None = None
@@ -57,7 +83,7 @@ def train_model(
     num_epochs: int = 500,
     lr: float = 1e-2,
     batch_size: int = 8,
-    eval_loss_fn: Callable = RMSE_loss,
+    eval_fns: dict[str, Callable[[T.Tensor, T.Tensor], T.Tensor]] = {"loss": RMSE_loss},
     eval_batch_size: int = 32,
     logging_freq: int = 100,
     pbar_description: str = "",
@@ -89,8 +115,8 @@ def train_model(
     batch_size : int, optional
         Batch size for training dataloader, by default 8
 
-    eval_loss_fn : Callable, optional
-        Function to evaluate non-train datasets on, by default RMSE_loss
+    eval_fns : dict[str, Callable[[T.Tensor, T.Tensor], T.Tensor]], optional
+        Functions to evaluate datasets on, by default {"loss": MSE_loss}
 
     eval_batch_size : int, optional
         Batch size for evaluation dataloaders, by default 32
@@ -115,9 +141,11 @@ def train_model(
     eval_dataloaders = {
         n: DataLoader(d, eval_batch_size) for n, d in datasets.items() if n != "train"
     }
-    results: dict[str, list[float]] = {d: [] for d in datasets.keys()}
+    results: dict[str, list[float]] = {
+        f"{d}_{e}": [] for d in datasets.keys() for e in eval_fns
+    }
 
-    rolling_loss = 0
+    train_metrics = {k: 0.0 for k in eval_fns}
     iteration = 0
 
     pbar: tqdm = tqdm(total=num_epochs * len(train_dataloader))
@@ -134,35 +162,42 @@ def train_model(
             model_optimizer.zero_grad()
 
             with T.no_grad():
-                eval_loss = eval_loss_fn(Y_pred, Y_batch).item()
+                # training metrics are evaluated as rolling
+                for metric, eval_fn in eval_fns.items():
+                    metric_val = eval_fn(Y_pred, Y_batch).item()
 
-            # update rolling loss
-            if iteration == 0:
-                rolling_loss = eval_loss
-            else:
-                n = min(iteration, logging_freq)
-                rolling_loss = (rolling_loss * (n - 1) + eval_loss) / n
+                    if iteration == 0:
+                        train_metrics[metric] = metric_val
+                    else:
+                        n = min(iteration, logging_freq)
+                        train_metrics[metric] = (
+                            train_metrics[metric] * (n - 1) + metric_val
+                        ) / n
 
             iteration += 1
 
             pbar.update()
 
             if iteration % logging_freq == 0:
-                results["train"].append(rolling_loss)
+                for metric, metric_value in train_metrics.items():
+                    results[f"train_{metric}"].append(metric_value)
 
                 # calculate average loss of each eval_dataloader
                 with T.no_grad():
                     for name, dataloader in eval_dataloaders.items():
-                        losses = []
-                        for X_batch, Y_batch in dataloader:
-                            Y_pred = model(X_batch)
-                            loss = eval_loss_fn(Y_pred, Y_batch)
-                            losses.append(loss.item())
+                        for metric, eval_fn in eval_fns.items():
+                            metric_values = []
+                            for X_batch, Y_batch in dataloader:
+                                Y_pred = model(X_batch)
+                                metric_val = eval_fn(Y_pred, Y_batch).item()
+                                metric_values.append(metric_val)
 
-                        results[name].append(sum(losses) / len(losses))
+                            results[f"{name}_{metric}"].append(
+                                sum(metric_values) / len(metric_values)
+                            )
 
                 # add losses to progress bar
-                str_losses = " | ".join(f"{k}: {v[-1]:.3f}" for k, v in results.items())
+                str_losses = " | ".join(f"{k}: {v[-1]:.2f}" for k, v in results.items())
                 pbar.set_description(f"{pbar_description}: {str_losses}")  # type: ignore
 
     pbar.close()
