@@ -23,7 +23,7 @@ class ExperimentReader:
         self.filename = next(iter(potential_filenames), None)
 
         self.config: dict[str, Any] = {}
-        self.data: dict[str, list[T.Tensor] | T.Tensor] = {}
+        self.data: dict[str, dict[str, T.Tensor] | list[T.Tensor] | T.Tensor] = {}
 
     def read(self: Self) -> None:
         if self.filename is None:

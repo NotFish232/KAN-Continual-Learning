@@ -135,8 +135,10 @@ def run_experiment(
     experiment_writer = ExperimentWriter(experiment_name, experiment_dtype)
 
     # log some experimental configuration
-    experiment_writer.log_config("mlp_architecture", mlp_architecture)
     experiment_writer.log_config("kan_architecture", kan_architecture)
+    experiment_writer.log_config("mlp_architecture", mlp_architecture)
+    experiment_writer.log_config("kan_kwargs", kan_kwargs)
+    experiment_writer.log_config("mlp_kwargs", mlp_kwargs)
 
     # values written to experiment_write should be either list[T.Tensor] or T.Tensor
     # if first element of v is not a T.Tensor assume its supposed to be a scaler tensor and convert
@@ -148,6 +150,10 @@ def run_experiment(
     # add all of the baseline metrics provided in pred_ground_truth into results
     for metric, ground_truth in pred_ground_truth.items():
         experiment_writer.log_data(f"base_{metric}_predictions", ground_truth)
+
+    # add model state dicts
+    experiment_writer.log_data(f"kan_state_dict", kan.state_dict())
+    experiment_writer.log_data(f"mlp_state_dict", mlp.state_dict())
 
     # flush changes to disk
     experiment_writer.write()

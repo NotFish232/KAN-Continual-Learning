@@ -21,13 +21,15 @@ class ExperimentWriter:
         self.experiment_dtype = experiment_dtype
 
         self.config: dict[str, Any] = {}
-        self.data: dict[str, list[T.Tensor] | T.Tensor] = {}
+        self.data: dict[str, dict[str, T.Tensor] | list[T.Tensor] | T.Tensor] = {}
 
     def log_config(self: Self, name: str, data: Any) -> None:
         self.config[name] = data
 
-    def log_data(self: Self, name: str, data: list[T.Tensor] | T.Tensor) -> None:
-        if isinstance(data, list):
+    def log_data(self: Self, name: str, data: dict[str, T.Tensor]| list[T.Tensor] | T.Tensor) -> None:
+        if isinstance(data, dict):
+            self.data[name] = {k: v.detach().cpu() for k, v in data.items()}
+        elif isinstance(data, list):
             self.data[name] = [d.detach().cpu() for d in data]
         else:
             self.data[name] = data.detach().cpu()
