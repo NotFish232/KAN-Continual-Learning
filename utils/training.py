@@ -5,6 +5,7 @@ import torch as T
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
+from tqdm import tqdm
 from typing_extensions import Self
 
 
@@ -42,6 +43,7 @@ class TrainModelArguments:
     eval_loss_fn: Callable | None = None
     eval_batch_size: int | None = None
     logging_freq: int | None = None
+    pbar_description: str | None = None
 
     def to_dict(self: Self) -> dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v is not None}
@@ -58,6 +60,7 @@ def train_model(
     eval_loss_fn: Callable = RMSE_loss,
     eval_batch_size: int = 32,
     logging_freq: int = 100,
+    pbar_description: str = "",
 ) -> dict[str, list[float]]:
     """
     Trains a model according to parameters and datasets
@@ -95,6 +98,9 @@ def train_model(
     logging_freq : int, optional
         Frequency to save train loss and evaluation losses, by default 100
 
+    pbar_description : str, optional
+        Description to use on progress bar, by default ""
+
     Returns
     -------
     dict[str, list[float]]
@@ -113,6 +119,9 @@ def train_model(
 
     rolling_loss = 0
     iteration = 0
+
+    pbar: tqdm = tqdm(total=num_epochs * len(train_dataloader))
+    pbar.set_description(f"{pbar_description}: {' | '.join(f'{k}: #####' for k in results)}")  # type: ignore
 
     for _ in range(num_epochs):
         for X_batch, Y_batch in train_dataloader:
@@ -136,6 +145,8 @@ def train_model(
 
             iteration += 1
 
+            pbar.update()
+
             if iteration % logging_freq == 0:
                 results["train"].append(rolling_loss)
 
@@ -149,5 +160,11 @@ def train_model(
                             losses.append(loss.item())
 
                         results[name].append(sum(losses) / len(losses))
+
+                # add losses to progress bar
+                str_losses = " | ".join(f"{k}: {v[-1]:.3f}" for k, v in results.items())
+                pbar.set_description(f"{pbar_description}: {str_losses}")  # type: ignore
+
+    pbar.close()
 
     return results

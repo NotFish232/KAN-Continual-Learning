@@ -3,7 +3,6 @@ from typing import Any
 import torch as T
 from kan import KAN
 from torch.utils.data import Dataset
-from tqdm import tqdm
 
 from utils.data_management import ExperimentDataType, ExperimentWriter
 from utils.models import MLP
@@ -103,7 +102,7 @@ def run_experiment(
         for metric in pred_datasets
     }
 
-    for task_idx, task_dataset in enumerate(tqdm(task_datasets)):
+    for task_idx, task_dataset in enumerate(task_datasets):
         # prepare datasets which is the task_dataset + each eval_dataset
         datasets = {"train": task_dataset} | {
             metric: d[task_idx] if isinstance(d, list) else d
@@ -114,7 +113,7 @@ def run_experiment(
             training_results = train_model(
                 model,
                 datasets,
-                pbar_description=f"Task {task_idx}",
+                pbar_description=f"{model_name.upper()} Task ({task_idx + 1}/{len(task_datasets)})",
                 **training_args.to_dict(),
             )
 
