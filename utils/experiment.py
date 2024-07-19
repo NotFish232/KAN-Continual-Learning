@@ -111,7 +111,12 @@ def run_experiment(
         }
 
         for model_name, model in models.items():
-            training_results = train_model(model, datasets, **training_args.to_dict())
+            training_results = train_model(
+                model,
+                datasets,
+                pbar_description=f"Task {task_idx}",
+                **training_args.to_dict(),
+            )
 
             # update results with training results
             for metric, value in training_results.items():
