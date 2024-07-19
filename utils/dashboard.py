@@ -294,7 +294,7 @@ def write_data(experiment_reader: ExperimentReader) -> None:
     for name, obj in experiment_reader.data.items():
         if isinstance(obj, dict):
             st.write(f"{name}: { {k for k in obj.keys()} }")
-        if isinstance(obj, list):
+        elif isinstance(obj, list):
             st.write(f"{name}: [{obj[0].shape} (x{len(obj)})]")
         else:
             st.write(f"{name}: {obj.shape}")
