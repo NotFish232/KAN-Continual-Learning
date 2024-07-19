@@ -7,9 +7,6 @@ from torch import nn
 from torch.nn import functional as F
 
 
-
-
-
 def num_parameters(module: nn.Module) -> int:
     """
     Calculates the number of trainable parameters in a model
