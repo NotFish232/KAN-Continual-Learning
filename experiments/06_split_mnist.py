@@ -24,10 +24,12 @@ MLP_ARCHICTURE = [IMG_SIZE**2, 128, 128, 64, 10]
 NUM_EPOCHS = 1
 
 # number of image samples used for calculating metrics per task
-NUM_TASK_EVAL_SAMPLES = 10
+NUM_TASK_EVAL_SAMPLES = 50
 
 # number of images samples used for predictions per task
-NUM_TASK_PREDICTION_SAMPLES = 10
+NUM_TASK_PREDICTION_SAMPLES = 50
+
+EVAL_BATCH_SIZE = 10
 
 
 def load_task_datasets(path: str, device: T.device) -> list[Dataset]:
@@ -92,6 +94,7 @@ def main() -> None:
         mlp_kwargs={"activation_fn": F.leaky_relu},
         training_args=TrainModelArguments(
             num_epochs=NUM_EPOCHS,
+            eval_batch_size=EVAL_BATCH_SIZE,
             loss_fn=nn.CrossEntropyLoss(),
             eval_fns={"loss": nn.CrossEntropyLoss(), "acc": calculate_accuracy},
         ),
