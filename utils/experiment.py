@@ -2,13 +2,13 @@ from typing import Any
 
 import torch as T
 from kan import KAN
-from torch.utils.data import Dataset
 from torch import nn
+from torch.utils.data import Dataset
 
+from utils import kan_reg_term
 from utils.data_management import ExperimentDataType, ExperimentWriter
 from utils.models import MLP
 from utils.training import TrainModelArguments, train_model
-from utils import kan_reg_term
 
 
 def run_experiment(
