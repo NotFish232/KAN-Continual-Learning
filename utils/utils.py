@@ -4,7 +4,6 @@ from typing import Callable
 import torch as T
 from kan import KAN
 from torch import nn
-from torch.nn import functional as F
 
 
 def num_parameters(module: nn.Module) -> int:
@@ -25,7 +24,7 @@ def num_parameters(module: nn.Module) -> int:
     return sum(p.numel() for p in module.parameters() if p.requires_grad)
 
 
-def mse_reg_loss(
+def kan_reg_term(
     kan: KAN,
     lamb: float = 0.0,
     lamb_l1: float = 1.0,
@@ -44,7 +43,7 @@ def mse_reg_loss(
         Callable which returns MSE Loss with regularization term
     """
 
-    def reg() -> T.Tensor:
+    def _reg() -> T.Tensor:
         def nonlinear(
             x: T.Tensor,
             th: float = small_mag_threshold,
@@ -52,13 +51,14 @@ def mse_reg_loss(
         ) -> T.Tensor:
             return (x < th) * x * factor + (x > th) * (x + (factor - 1) * th)
 
-        reg_ = T.tensor(0.0)
+        reg_ = T.tensor(0.0, device=kan.acts_scale[0].device)
         for i in range(len(kan.acts_scale)):
             vec = kan.acts_scale[i].reshape(-1)
 
             p = vec / T.sum(vec)
             l1 = T.sum(nonlinear(vec))
             entropy = -T.sum(p * T.log2(p + 1e-4))
+
             reg_ += lamb_l1 * l1 + lamb_entropy * entropy  # both l1 and entropy
 
         # regularize coefficient to encourage spline to be zero
@@ -67,12 +67,9 @@ def mse_reg_loss(
             coeff_diff_l1 = T.sum(T.mean(T.abs(T.diff(kan.act_fun[i].coef)), dim=1))
             reg_ += lamb_coef * coeff_l1 + lamb_coefdiff * coeff_diff_l1
 
-        return reg_
+        return lamb * reg_
 
-    def _mse_reg_loss(Y_pred: T.Tensor, Y: T.Tensor) -> T.Tensor:
-        return F.mse_loss(Y_pred, Y) + lamb * reg()
-
-    return _mse_reg_loss
+    return _reg
 
 
 def gaussian(x: T.Tensor, mean: float, std: float) -> T.Tensor:

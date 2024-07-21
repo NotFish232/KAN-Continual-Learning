@@ -3,10 +3,12 @@ from typing import Any
 import torch as T
 from kan import KAN
 from torch.utils.data import Dataset
+from torch import nn
 
 from utils.data_management import ExperimentDataType, ExperimentWriter
 from utils.models import MLP
 from utils.training import TrainModelArguments, train_model
+from utils import kan_reg_term
 
 
 def run_experiment(
@@ -102,10 +104,18 @@ def run_experiment(
         }
 
         for model_name, model in models.items():
+            # add regularization term to kan training
+            base_loss_fn = training_args.loss_fn or nn.MSELoss()  # TODO: FIXME
+            training_args.loss_fn = None
+            if model_name == "kan":
+                reg = kan_reg_term(kan)
+                loss_fn = lambda *args, **kwargs: (base_loss_fn(*args, **kwargs) + reg())
+
             training_results = train_model(
                 model,
                 datasets,
                 pbar_description=f"{model_name.upper()} Task ({task_idx + 1}/{len(task_datasets)})",
+                loss_fn=loss_fn,
                 **training_args.to_dict(),
             )
 
