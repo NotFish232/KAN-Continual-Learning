@@ -6,10 +6,10 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import ConcatDataset, Dataset, Subset, TensorDataset
 
+from utils.architecture import KAN_ARCHITECTURE, MLP_ARCHITECTURE
 from utils.data_management import ExperimentDataType
 from utils.experiment import run_experiment
 from utils.training import TrainModelArguments, calculate_accuracy
-from utils.architecture import KAN_ARCHITECTURE, MLP_ARCHITECTURE
 
 EXPERIMENT_NAME = Path(__file__).stem
 

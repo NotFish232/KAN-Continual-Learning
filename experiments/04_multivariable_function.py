@@ -5,10 +5,10 @@ import torch as T
 from torch.utils.data import Dataset, TensorDataset
 
 from utils import gaussian
+from utils.architecture import KAN_ARCHITECTURE, MLP_ARCHITECTURE
 from utils.data_management import ExperimentDataType
 from utils.experiment import run_experiment
 from utils.training import TrainModelArguments
-from utils.architecture import KAN_ARCHITECTURE, MLP_ARCHITECTURE
 
 EXPERIMENT_NAME = Path(__file__).stem
 

@@ -5,7 +5,7 @@ from kan import KAN
 from torch import nn
 from torch.utils.data import Dataset
 
-from utils import kan_reg_term, num_parameters
+from utils import kan_reg_term
 from utils.data_management import ExperimentDataType, ExperimentWriter
 from utils.models import MLP
 from utils.training import TrainModelArguments, train_model

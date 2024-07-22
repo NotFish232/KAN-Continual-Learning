@@ -1,7 +1,7 @@
+import json
 import math
 from itertools import cycle
 from typing import Callable, Generator
-import json
 
 import streamlit as st
 import torch as T

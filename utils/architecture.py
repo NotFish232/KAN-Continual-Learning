@@ -1,7 +1,9 @@
-from kan import KAN, KANLayer
-from utils.models import MLP
-from utils import num_parameters
 from itertools import chain
+
+from kan import KAN
+
+from utils import num_parameters
+from utils.models import MLP
 
 # maps an (num_input, num_output, [num_layers]) => num_parameter_count => architecture
 # architecture is tuple[list[int], int] in the case of a KAN
