@@ -20,7 +20,20 @@ def plotly_colors() -> Generator[str, None, None]:
         Yields indefinitely a cycle of distinctive colors
     """
 
-    yield from cycle(("red", "blue", "green"))
+    yield from cycle(
+        (
+            "#FF5733",
+            "#33FF57",
+            "#3357FF",
+            "#FF33A1",
+            "#33FFF6",
+            "#F3FF33",
+            "#9933FF",
+            "#FF9633",
+            "#33FF99",
+            "#FF3333",
+        )
+    )
 
 
 def plot_loss_graphs(experiment_reader: ExperimentReader) -> None:
