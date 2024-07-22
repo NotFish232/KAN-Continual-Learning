@@ -52,6 +52,7 @@ def main() -> None:
         {"function": X},
         {"function": Y, "task": Y_partitioned},
         ExperimentDataType.function_1d,
+        device=device,
         kan_kwargs={
             "grid": KAN_GRID_SIZE,
             "grid_range": [0, NUM_PEAKS],

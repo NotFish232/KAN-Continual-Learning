@@ -90,6 +90,7 @@ def main() -> None:
         prediction_datasets,
         prediction_ground_truths,
         ExperimentDataType.image,
+        device=device,
         kan_kwargs={
             "grid": KAN_GRID_SIZE,
             "bias_trainable": False,
