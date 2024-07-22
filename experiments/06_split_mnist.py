@@ -9,6 +9,7 @@ from torch.utils.data import ConcatDataset, Dataset, Subset, TensorDataset
 from utils.data_management import ExperimentDataType
 from utils.experiment import run_experiment
 from utils.training import TrainModelArguments, calculate_accuracy
+from utils.architecture import KAN_ARCHITECTURE, MLP_ARCHITECTURE
 
 EXPERIMENT_NAME = Path(__file__).stem
 
@@ -17,9 +18,7 @@ MNIST_EVAL_PATH = "./data/MNIST/mnist_eval.csv"
 IMG_SIZE = 28
 
 
-KAN_ARCHITECTURE = [IMG_SIZE**2, 16, 10]
-KAN_GRID_SIZE = 25
-MLP_ARCHICTURE = [IMG_SIZE**2, 128, 128, 64, 10]
+PARAMETER_COUNTS = [10_000, 100_000, 500_000, 1_000_000]
 
 NUM_EPOCHS = 1
 
@@ -83,8 +82,8 @@ def main() -> None:
 
     run_experiment(
         EXPERIMENT_NAME,
-        KAN_ARCHITECTURE,
-        MLP_ARCHICTURE,
+        [(KAN_ARCHITECTURE[(IMG_SIZE ** 2, 10)][p], p) for p in PARAMETER_COUNTS],
+        [(MLP_ARCHITECTURE[(IMG_SIZE ** 2, 10)][p], p) for p in PARAMETER_COUNTS],
         train_datasets,
         eval_datasets,
         prediction_datasets,
@@ -92,7 +91,6 @@ def main() -> None:
         ExperimentDataType.image,
         device=device,
         kan_kwargs={
-            "grid": KAN_GRID_SIZE,
             "bias_trainable": False,
             "sp_trainable": False,
             "sb_trainable": False,

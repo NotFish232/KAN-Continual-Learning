@@ -5,7 +5,7 @@ from kan import KAN
 from torch import nn
 from torch.utils.data import Dataset
 
-from utils import kan_reg_term
+from utils import kan_reg_term, num_parameters
 from utils.data_management import ExperimentDataType, ExperimentWriter
 from utils.models import MLP
 from utils.training import TrainModelArguments, train_model
@@ -13,8 +13,8 @@ from utils.training import TrainModelArguments, train_model
 
 def run_experiment(
     experiment_name: str,
-    kan_architecture: list[int],
-    mlp_architecture: list[int],
+    kan_architectures: list[tuple[tuple[list[int], int], int]],
+    mlp_architectures: list[tuple[list[int], int]],
     task_datasets: list[Dataset],
     eval_datasets: dict[str, list[Dataset] | Dataset],
     pred_datasets: dict[str, list[T.Tensor] | T.Tensor],
@@ -42,11 +42,11 @@ def run_experiment(
     experiment_name : str
         Name of the experiment, used for writing / reading the experiment
 
-    kan_architecture : list[int]
-        Represents the width of each layer of the kan
+    kan_architectures : list[tuple[tuple[list[int], int], int]]
+        Represents the width of each layer of the kan, and grid size, last int is param count
 
-    mlp_architecture : list[int]
-        Represents  the width of each layer of the mlp
+    mlp_architectures : list[tuple[list[int], int]]
+        Represents the width of each layer of the mlp, last int is param count
 
     task_datasets : list[Dataset]
         Dataset for each individual task in continual learning
@@ -87,10 +87,13 @@ def run_experiment(
     # use passed device or cuda if available else cpu
     device = device or T.device("cuda" if T.cuda.is_available() else "cpu")
 
-    kan = KAN(kan_architecture, device=device, **kan_kwargs)
-    mlp = MLP(mlp_architecture, **mlp_kwargs).to(device)
-
-    models = {"kan": kan, "mlp": mlp}
+    models: dict[str, nn.Module] = {}
+    for (architecture, grid_size), param_count in kan_architectures:
+        kan = KAN(architecture, grid_size, device=device, **kan_kwargs)
+        models[f"kan_{param_count}"] = kan
+    for architecture, param_count in mlp_architectures:
+        mlp = MLP(architecture, **mlp_kwargs).to(device)
+        models[f"mlp_{param_count}"] = mlp
 
     # all metric evaluations and predictions
     # each metric is of the form {model}_{dataset}_{{metric}|predictions}
@@ -109,7 +112,11 @@ def run_experiment(
             training_args.loss_fn = None
             if model_name == "kan":
                 reg = kan_reg_term(kan)
-                loss_fn = lambda *args, **kwargs: (base_loss_fn(*args, **kwargs) + reg())
+                loss_fn = lambda *args, **kwargs: (
+                    base_loss_fn(*args, **kwargs) + reg()
+                )
+            else:
+                loss_fn = base_loss_fn
 
             training_results = train_model(
                 model,
@@ -141,8 +148,14 @@ def run_experiment(
     experiment_writer = ExperimentWriter(experiment_name, experiment_dtype)
 
     # log some experimental configuration
-    experiment_writer.log_config("kan_architecture", kan_architecture)
-    experiment_writer.log_config("mlp_architecture", mlp_architecture)
+    experiment_writer.log_config(
+        "kan_architectures",
+        [*zip((m for m in models if m.startswith("kan")), kan_architectures)],
+    )
+    experiment_writer.log_config(
+        "mlp_architecture",
+        [*zip((m for m in models if m.startswith("mlp")), mlp_architectures)],
+    )
     experiment_writer.log_config("kan_kwargs", kan_kwargs)
     experiment_writer.log_config("mlp_kwargs", mlp_kwargs)
 

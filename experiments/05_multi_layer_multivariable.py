@@ -8,6 +8,7 @@ from utils import gaussian
 from utils.data_management import ExperimentDataType
 from utils.experiment import run_experiment
 from utils.training import TrainModelArguments
+from utils.architecture import KAN_ARCHITECTURE, MLP_ARCHITECTURE
 
 EXPERIMENT_NAME = Path(__file__).stem
 
@@ -16,11 +17,10 @@ NUM_POINTS = 64
 GAUSSIAN_STD_1 = 0.2
 GAUSSIAN_STD_2 = 0.1
 
-KAN_ARCHITECTURE = [2, 4, 1]
-KAN_GRID_SIZE = 50
-MLP_ARCHICTURE = [2, 32, 32, 1]
-
 NUM_EPOCHS = 20
+
+
+PARAMETER_COUNTS = [100, 1_000, 5_000, 10_000]
 
 
 def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
@@ -59,8 +59,8 @@ def main() -> None:
 
     run_experiment(
         EXPERIMENT_NAME,
-        KAN_ARCHITECTURE,
-        MLP_ARCHICTURE,
+        [(KAN_ARCHITECTURE[(2, 1)][p], p) for p in PARAMETER_COUNTS],
+        [(MLP_ARCHITECTURE[(2, 1)][p], p) for p in PARAMETER_COUNTS],
         partitioned_datasets,
         {"eval": function_dataset},
         {"function": X},
@@ -68,7 +68,6 @@ def main() -> None:
         ExperimentDataType.function_2d,
         device=device,
         kan_kwargs={
-            "grid": KAN_GRID_SIZE,
             "grid_range": [0, NUM_PEAKS],
             "bias_trainable": False,
             "sp_trainable": False,

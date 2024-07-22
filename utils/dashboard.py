@@ -1,6 +1,7 @@
 import math
 from itertools import cycle
 from typing import Callable, Generator
+import json
 
 import streamlit as st
 import torch as T
@@ -308,7 +309,7 @@ def write_config(experiment_reader: ExperimentReader) -> None:
     """
 
     for name, obj in experiment_reader.config.items():
-        st.write(f"{name}: {obj}")
+        st.write(f"{name}: {json.dumps(obj, indent=4)}")
 
 
 @st.cache_data
