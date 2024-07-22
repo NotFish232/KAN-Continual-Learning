@@ -65,6 +65,7 @@ class TrainModelArguments:
     optimizer: Type[optim.Optimizer] | None = None
     loss_fn: Callable | None = None
     num_epochs: int | None = None
+    lr: float | None = None
     batch_size: int | None = None
     eval_fns: dict[str, Callable[[T.Tensor, T.Tensor], T.Tensor]] | None = None
     eval_batch_size: int | None = None

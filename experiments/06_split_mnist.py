@@ -20,7 +20,9 @@ IMG_SIZE = 28
 
 PARAMETER_COUNTS = [10_000, 100_000, 500_000, 1_000_000]
 
+
 NUM_EPOCHS = 1
+LR = 2e-3
 
 # number of image samples used for calculating metrics per task
 NUM_TASK_EVAL_SAMPLES = 50
@@ -82,8 +84,8 @@ def main() -> None:
 
     run_experiment(
         EXPERIMENT_NAME,
-        [(KAN_ARCHITECTURE[(IMG_SIZE ** 2, 10)][p], p) for p in PARAMETER_COUNTS],
-        [(MLP_ARCHITECTURE[(IMG_SIZE ** 2, 10)][p], p) for p in PARAMETER_COUNTS],
+        [(KAN_ARCHITECTURE[(IMG_SIZE**2, 10)][p], p) for p in PARAMETER_COUNTS],
+        [(MLP_ARCHITECTURE[(IMG_SIZE**2, 10)][p], p) for p in PARAMETER_COUNTS],
         train_datasets,
         eval_datasets,
         prediction_datasets,
@@ -98,6 +100,7 @@ def main() -> None:
         mlp_kwargs={"activation_fn": F.leaky_relu},
         training_args=TrainModelArguments(
             num_epochs=NUM_EPOCHS,
+            lr=LR,
             eval_batch_size=EVAL_BATCH_SIZE,
             loss_fn=nn.CrossEntropyLoss(),
             eval_fns={"loss": nn.CrossEntropyLoss(), "acc": calculate_accuracy},
