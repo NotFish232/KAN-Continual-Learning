@@ -61,7 +61,7 @@ MLP_ARCHITECTURE: dict[tuple[int, int], dict[int, list[int]]] = {
         10_000: [2, 64, 75, 64, 1],
     },
     (28**2, 10): {
-        10_000: [28 ** 2, 13, 10],
+        10_000: [28**2, 13, 10],
         100_000: [28**2, 128, 10],
         500_000: [28**2, 542, 128, 10],
         1_000_000: [28**2, 1024, 192, 10],
@@ -70,25 +70,37 @@ MLP_ARCHITECTURE: dict[tuple[int, int], dict[int, list[int]]] = {
 
 
 def main() -> None:
+    errors = []
     kan_architectures = [x.items() for x in KAN_ARCHITECTURE.values()]
     for expected_param_count, (architecture, grid_size) in chain(*kan_architectures):
         kan = KAN(architecture, grid_size)
         param_count = num_parameters(kan)
+
+        error = abs(param_count - expected_param_count) / expected_param_count
+        errors.append(error)
+
         print(
             f"KAN: {architecture = }, {grid_size = }",
             f"expected: {expected_param_count} vs actual: {param_count}",
-            f"({abs(param_count - expected_param_count) / expected_param_count:.2%} off)",
+            f"({error:.2%} off)",
         )
 
     mlp_architectures = [x.items() for x in MLP_ARCHITECTURE.values()]
     for expected_param_count, architecture in chain(*mlp_architectures):
         mlp = MLP(architecture)
         param_count = num_parameters(mlp)
+
+        error = abs(param_count - expected_param_count) / expected_param_count
+        errors.append(error)
+
         print(
             f"MLP: {architecture = }",
             f"expected: {expected_param_count} vs actual: {param_count}",
-            f"({abs(param_count - expected_param_count) / expected_param_count:.2%} off)",
+            f"({error:.2%} off)",
         )
+
+    print(f"Average Error: {sum(errors) / len(errors):.2%}")
+    print(f"Max Error: {max(errors):.2%}")
 
 
 if __name__ == "__main__":
