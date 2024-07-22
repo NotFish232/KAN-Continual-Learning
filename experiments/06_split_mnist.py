@@ -90,7 +90,12 @@ def main() -> None:
         prediction_datasets,
         prediction_ground_truths,
         ExperimentDataType.image,
-        kan_kwargs={"grid": KAN_GRID_SIZE},
+        kan_kwargs={
+            "grid": KAN_GRID_SIZE,
+            "bias_trainable": False,
+            "sp_trainable": False,
+            "sb_trainable": False,
+        },
         mlp_kwargs={"activation_fn": F.leaky_relu},
         training_args=TrainModelArguments(
             num_epochs=NUM_EPOCHS,
