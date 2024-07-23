@@ -13,12 +13,17 @@ from utils.training import TrainModelArguments, calculate_accuracy
 
 EXPERIMENT_NAME = Path(__file__).stem
 
-MNIST_TRAIN_PATH = "./data/MNIST/mnist_train.csv"
-MNIST_EVAL_PATH = "./data/MNIST/mnist_eval.csv"
-IMG_SIZE = 28
+CIFAR_TRAIN_PATH = "./data/CIFAR_100/cifar_100_train.csv"
+CIFAR_EVAL_PATH = "./data/CIFAR_100/cifar_100_eval.csv"
+CIFAR_LABELS_PATH = "./data/CIFAR_100/cifar_100_labels.txt"
+IMG_SIZE = 32
+
+NUM_LABELS = 100
+NUM_TASKS = 20
+LABELS_PER_TASK = NUM_LABELS // NUM_TASKS
 
 
-PARAMETER_COUNTS = [10_000, 100_000, 500_000, 1_000_000]
+PARAMETER_COUNTS = [50_000, 200_000, 1_000_000]
 
 
 NUM_EPOCHS = 1
@@ -34,17 +39,22 @@ EVAL_BATCH_SIZE = 10
 
 
 def load_task_datasets(path: str, device: T.device) -> list[Dataset]:
-    data = pd.read_csv(path).to_numpy()
+    data = pd.read_csv(path, header=None).to_numpy()
 
     X = T.tensor(data[:, 1:], dtype=T.float32, device=device) / 255
-    Y = T.eye(10, device=device)[T.asarray(data[:, 0])]
+    Y = T.eye(NUM_LABELS, device=device)[T.asarray(data[:, 0])]
 
     datasets: list[Dataset] = []
 
-    for label_1, label_2 in zip(range(0, 11, 2), range(1, 11, 2)):
-        indices = (
-            (Y.argmax(dim=-1) == label_1) | (Y.argmax(dim=-1) == label_2)
-        ).squeeze()
+    for task in range(NUM_TASKS):
+        indices = T.zeros(
+            (len(Y),),
+            dtype=T.bool,
+            device=device,
+        )
+        for label in range(task * LABELS_PER_TASK, (task + 1) * LABELS_PER_TASK):
+            indices |= Y.argmax(dim=-1) == label
+
         x_batch = X[indices]
         y_batch = Y[indices]
 
@@ -56,8 +66,8 @@ def load_task_datasets(path: str, device: T.device) -> list[Dataset]:
 def main() -> None:
     device = T.device("cuda" if T.cuda.is_available() else "cpu")
 
-    train_datasets = load_task_datasets(MNIST_TRAIN_PATH, device)
-    full_eval_datasets = load_task_datasets(MNIST_EVAL_PATH, device)
+    train_datasets = load_task_datasets(CIFAR_TRAIN_PATH, device)
+    full_eval_datasets = load_task_datasets(CIFAR_EVAL_PATH, device)
 
     eval_datasets: dict[str, list[Dataset] | Dataset] = {}
     prediction_datasets: dict[str, list[T.Tensor] | T.Tensor] = {}
@@ -84,13 +94,19 @@ def main() -> None:
 
     run_experiment(
         EXPERIMENT_NAME,
-        [(KAN_ARCHITECTURE[(IMG_SIZE**2, 10)][p], p) for p in PARAMETER_COUNTS],
-        [(MLP_ARCHITECTURE[(IMG_SIZE**2, 10)][p], p) for p in PARAMETER_COUNTS],
+        [
+            (KAN_ARCHITECTURE[(IMG_SIZE**2 * 3, NUM_LABELS)][p], p)
+            for p in PARAMETER_COUNTS
+        ],
+        [
+            (MLP_ARCHITECTURE[(IMG_SIZE**2 * 3, NUM_LABELS)][p], p)
+            for p in PARAMETER_COUNTS
+        ],
         train_datasets,
         eval_datasets,
         prediction_datasets,
         prediction_ground_truths,
-        ExperimentDataType.image_bw,
+        ExperimentDataType.image_rgb,
         device=device,
         kan_kwargs={
             "bias_trainable": False,
