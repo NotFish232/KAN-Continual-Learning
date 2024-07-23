@@ -1,13 +1,13 @@
-import json
 import math
 from itertools import cycle
-from typing import Callable, Generator
+from pathlib import Path
+from typing import Generator
 
 import torch as T
-from utils.data_management import ExperimentDataType, ExperimentReader
 from plotly import graph_objects as go  # type: ignore
 from plotly.subplots import make_subplots  # type: ignore
-from pathlib import Path
+
+from utils.data_management import ExperimentDataType, ExperimentReader
 
 FIGURES_PATH = Path(__file__).parents[1] / "figures"
 
