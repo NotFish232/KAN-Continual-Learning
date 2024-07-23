@@ -26,8 +26,8 @@ LABELS_PER_TASK = NUM_LABELS // NUM_TASKS
 PARAMETER_COUNTS = [50_000, 200_000, 1_000_000]
 
 
-NUM_EPOCHS = 1
-LR = 5e-3
+NUM_EPOCHS = 2
+LR = 2e-3
 
 # number of image samples used for calculating metrics per task
 NUM_TASK_EVAL_SAMPLES = 50
