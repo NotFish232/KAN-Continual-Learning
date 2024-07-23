@@ -31,7 +31,6 @@ def plotly_colors() -> Generator[str, None, None]:
             "#3357FF",
             "#FF33A1",
             "#33FFF6",
-            "#F3FF33",
             "#9933FF",
             "#FF9633",
             "#33FF99",
@@ -63,7 +62,6 @@ def create_metric_graphs(experiment_reader: ExperimentReader) -> dict[str, go.Fi
 
         # grab the model and metric from the result key
         model, metric, _ = k.rsplit("_", 2)
-
 
         if metric not in graphs:
             graphs[metric] = {}
@@ -113,7 +111,7 @@ def create_metric_graphs(experiment_reader: ExperimentReader) -> dict[str, go.Fi
     return plots
 
 
-def plot_1d_prediction_graph(experiment_reader: ExperimentReader) -> None:
+def plot_1d_prediction_graph(experiment_reader: ExperimentReader) -> go.Figure:
     """
     Creates prediction graphs for 1d functions, i.e., curves
     """
@@ -130,6 +128,7 @@ def plot_1d_prediction_graph(experiment_reader: ExperimentReader) -> None:
         if model not in predictions:
             predictions[model] = {}
 
+        assert isinstance(v, (T.Tensor, list))
         predictions[model][metric] = v
 
     assert "base" in predictions
@@ -155,9 +154,11 @@ def plot_1d_prediction_graph(experiment_reader: ExperimentReader) -> None:
 
     # create subplots where each row is a model and each column is a task
     plot = make_subplots(rows=len(predictions), cols=num_tasks)
-    plot.update_xaxes(showticklabels=False)
-    plot.update_yaxes(showticklabels=False, range=graph_range)
-    plot.update_layout({"title": {"text": "Predictions"}})
+    plot.update_xaxes(showticklabels=False, showgrid=False)
+    plot.update_yaxes(showticklabels=False, showgrid=False, range=graph_range)
+    plot.update_layout(
+        {"title": {"text": "Predictions"}, "title_x": 0.5, "template": TEMPLATE}
+    )
 
     for metric, values in predictions["base"].items():
         # plot all non task specific baselines on all subplots
@@ -169,10 +170,8 @@ def plot_1d_prediction_graph(experiment_reader: ExperimentReader) -> None:
                             x=T.linspace(0, num_tasks, len(values)),
                             y=values.squeeze(),
                             opacity=0.1,
-                            line={"color": "lightblue"},
-                            name="Base Function",
-                            legendgroup="base_background",
-                            showlegend=row_idx + col_idx == 0,
+                            line={"color": "black"},
+                            showlegend=False,
                         ),
                         row_idx + 1,
                         col_idx + 1,
@@ -198,7 +197,11 @@ def plot_1d_prediction_graph(experiment_reader: ExperimentReader) -> None:
                             x=x.squeeze(),
                             y=y.squeeze(),
                             line={"color": color},
-                            name=f"{model.capitalize()} {metric.capitalize()}",
+                            name=(
+                                model.upper().replace("_", " ")
+                                if model != "base"
+                                else model.capitalize()
+                            ),
                             legendgroup=model,
                             showlegend=col_idx == 0,
                         ),
@@ -206,7 +209,7 @@ def plot_1d_prediction_graph(experiment_reader: ExperimentReader) -> None:
                         col_idx + 1,
                     )
 
-    st.plotly_chart(plot)
+    return plot
 
 
 def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
@@ -226,6 +229,7 @@ def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
         if model not in predictions:
             predictions[model] = {}
 
+        assert isinstance(v, (T.Tensor, list))
         predictions[model][metric] = v
 
     assert "base" in predictions
@@ -318,10 +322,10 @@ def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
                         col_idx + 1,
                     )
 
-    st.plotly_chart(plot)
+    return plot
 
 
-def plot_prediction_graph(experiment_reader: ExperimentReader) -> None:
+def create_prediction_graph(experiment_reader: ExperimentReader) -> go.Figure:
     """
     Calls either `plot_1d_prediction_graphs` or `plot_2d_prediction_graphs`
     depending on `experiment_reader.experiment_dtype`
@@ -329,34 +333,9 @@ def plot_prediction_graph(experiment_reader: ExperimentReader) -> None:
 
     match experiment_reader.experiment_dtype:
         case ExperimentDataType.function_1d:
-            plot_1d_prediction_graph(experiment_reader)
+            return plot_1d_prediction_graph(experiment_reader)
         case ExperimentDataType.function_2d:
-            plot_2d_prediction_graph(experiment_reader)
-
-
-def write_data(experiment_reader: ExperimentReader) -> None:
-    """
-    Writes the data section of the experiment_reader to streamlit
-    """
-
-    for name, obj in experiment_reader.data.items():
-        if isinstance(obj, dict):
-            st.write(f"{name}: { {k for k in obj.keys()} }")
-        elif isinstance(obj, list):
-            st.write(f"{name}: [{obj[0].shape} (x{len(obj)})]")
-        else:
-            st.write(f"{name}: {obj.shape}")
-        with st.expander("View Data"):
-            st.write(str(obj))
-
-
-def write_config(experiment_reader: ExperimentReader) -> None:
-    """
-    Writes the config section of the experiment_reader to streamlit
-    """
-
-    for name, obj in experiment_reader.config.items():
-        st.write(f"{name}: {json.dumps(obj, indent=4)}")
+            return plot_2d_prediction_graph(experiment_reader)
 
 
 def main() -> None:
@@ -369,13 +348,15 @@ def main() -> None:
 
         metric_graphs = create_metric_graphs(reader)
 
-        for metric, graph in metric_graphs.items():
+        for metric, metric_graph in metric_graphs.items():
             graph_path = experiment_path / f"{metric}_figure.png"
-            graph.write_image(graph_path)
+            metric_graph.write_image(graph_path)
 
-        break
+        prediction_graph = create_prediction_graph(reader)
+        prediction_path = experiment_path / "predictions.png"
+        prediction_graph.write_image(prediction_path)
 
-        print([*metric_graphs.keys()])
+        exit(1)
 
 
 if __name__ == "__main__":
