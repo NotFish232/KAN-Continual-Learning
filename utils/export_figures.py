@@ -3,11 +3,15 @@ import math
 from itertools import cycle
 from typing import Callable, Generator
 
-import streamlit as st
 import torch as T
-from data_management import ExperimentDataType, ExperimentReader  # type: ignore
+from utils.data_management import ExperimentDataType, ExperimentReader
 from plotly import graph_objects as go  # type: ignore
 from plotly.subplots import make_subplots  # type: ignore
+from pathlib import Path
+
+FIGURES_PATH = Path(__file__).parents[1] / "figures"
+
+TEMPLATE = "simple_white"
 
 
 def plotly_colors() -> Generator[str, None, None]:
@@ -36,21 +40,30 @@ def plotly_colors() -> Generator[str, None, None]:
     )
 
 
-def plot_loss_graphs(experiment_reader: ExperimentReader) -> None:
+def create_metric_graphs(experiment_reader: ExperimentReader) -> dict[str, go.Figure]:
     """
-    Plots the loss graphs of an experiment
+    Plots the graphs of an experiment for all metrics
     """
 
     # maps a metric -> a dict of model -> values
     graphs: dict[str, dict[str, T.Tensor]] = {}
+    num_tasks = -1
 
     for k, v in experiment_reader.data.items():
         # only process result items that are losses
+
+        # TODO: FIXME
+        # scuffed but it works to find num_tasks
+        # which should really be bundled up in experiment_writer's config
+        if k.endswith("predictions") and isinstance(v, list):
+            num_tasks = len(v)
+
         if not k.endswith("loss"):
             continue
 
         # grab the model and metric from the result key
         model, metric, _ = k.rsplit("_", 2)
+
 
         if metric not in graphs:
             graphs[metric] = {}
@@ -58,25 +71,46 @@ def plot_loss_graphs(experiment_reader: ExperimentReader) -> None:
         assert isinstance(v, T.Tensor)
         graphs[metric][model] = v
 
+    plots = {}
+
     # Generate a graph for each metric
     # where each trace is a different model
     for metric, metric_data in graphs.items():
         traces = []
 
+        num_points = -1
+
         for (model, values), color in zip(metric_data.items(), plotly_colors()):
             trace = go.Scatter(
                 y=values,
-                name=f"{model.capitalize()} {metric} loss",
+                name=model.upper().replace("_", " "),
                 showlegend=True,
-                line={"color": color},
+                line=go.scatter.Line(color=color),
             )
             traces.append(trace)
+            num_points = len(values)
 
         plot = go.Figure(
             traces,
-            layout=go.Layout(title=go.layout.Title(text=f"{metric.capitalize()} Loss")),
+            layout=go.Layout(
+                title=go.layout.Title(text=f"{metric.capitalize()} Loss"),
+                title_x=0.5,
+                xaxis_title="Training Batch",
+                yaxis_title=f"{metric.capitalize()} Loss (RMSE)",
+                titlefont=go.layout.title.Font(color="black"),
+                template=TEMPLATE,
+            ),
         )
-        st.plotly_chart(plot)
+        for i in range(1, num_tasks):
+            plot.add_vline(
+                x=i * (num_points // num_tasks),
+                line_width=3,
+                line_dash="dash",
+                line_color="dimgray",
+            )
+        plots[metric] = plot
+
+    return plots
 
 
 def plot_1d_prediction_graph(experiment_reader: ExperimentReader) -> None:
@@ -325,51 +359,23 @@ def write_config(experiment_reader: ExperimentReader) -> None:
         st.write(f"{name}: {json.dumps(obj, indent=4)}")
 
 
-@st.cache_data
-def fetch_experiment_reader(experiment: str) -> ExperimentReader:
-    """
-    Fetchs and loads the experiment_reader from an experiment
-    Cached using `@st.cache_data`
-    """
-
-    reader = ExperimentReader(experiment)
-    reader.read()
-
-    return reader
-
-
-def page_function(experiment: str) -> Callable:
-    def _page_function() -> None:
-        experiment_reader = fetch_experiment_reader(experiment)
-
-        st.write(f"# {experiment}")
-        st.write("##")
-
-        st.write("## Graphs")
-        st.write("")
-        st.write("")
-        plot_loss_graphs(experiment_reader)
-        plot_prediction_graph(experiment_reader)
-
-        st.write("## Data")
-        st.write("")
-        write_data(experiment_reader)
-        st.write("##")
-
-        st.write("## Config")
-        st.write("")
-        write_config(experiment_reader)
-
-    return _page_function
-
-
 def main() -> None:
-    pages = [
-        st.Page(page_function(e), title=e, url_path=e)
-        for e in ExperimentReader.get_experiments()
-    ]
-    navigation = st.navigation(pages)
-    navigation.run()
+    for experiment in ExperimentReader.get_experiments():
+        reader = ExperimentReader(experiment)
+        reader.read()
+
+        experiment_path = FIGURES_PATH / experiment
+        experiment_path.mkdir(exist_ok=True)
+
+        metric_graphs = create_metric_graphs(reader)
+
+        for metric, graph in metric_graphs.items():
+            graph_path = experiment_path / f"{metric}_figure.png"
+            graph.write_image(graph_path)
+
+        break
+
+        print([*metric_graphs.keys()])
 
 
 if __name__ == "__main__":

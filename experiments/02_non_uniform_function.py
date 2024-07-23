@@ -18,7 +18,7 @@ LINEAR_SLOPE = 0.2
 
 NUM_EPOCHS = 200
 
-PARAMETER_COUNTS = [25, 100, 500, 1_000]
+PARAMETER_COUNTS = [25, 100, 1_000]
 
 
 def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:

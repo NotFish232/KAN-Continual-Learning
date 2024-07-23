@@ -20,7 +20,7 @@ GAUSSIAN_STD_2 = 0.1
 NUM_EPOCHS = 20
 
 
-PARAMETER_COUNTS = [100, 1_000, 5_000, 10_000]
+PARAMETER_COUNTS = [100, 1_000, 10_000]
 
 
 def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
