@@ -45,7 +45,6 @@ def main() -> None:
     X_partitioned = list(T.chunk(X, NUM_PEAKS**2))
     Y_partitioned = list(T.chunk(Y, NUM_PEAKS**2))
 
-
     function_dataset = TensorDataset(X, Y)
     partitioned_datasets: list[Dataset] = []
     for X_batch, Y_batch in zip(X_partitioned, Y_partitioned):
