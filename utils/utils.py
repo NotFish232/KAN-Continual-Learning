@@ -29,7 +29,7 @@ def partition_2d_graph(x: T.Tensor, num_intervals: int) -> T.Tensor:
 
     dim_1, dim_2 = x.shape
 
-    dim_max = math.isqrt(dim_1 // num_intervals ** 2)
+    dim_interval = math.isqrt(dim_1) // num_intervals 
 
     x = x.reshape(math.isqrt(dim_1), math.isqrt(dim_1), -1)
 
@@ -37,15 +37,18 @@ def partition_2d_graph(x: T.Tensor, num_intervals: int) -> T.Tensor:
 
     for i in range(num_intervals):
         for j in range(num_intervals):
-            x_start = i * dim_max // num_intervals
-            x_end = (i + 1) * dim_max // num_intervals
-            y_start = j * dim_max // num_intervals
-            y_end = (j + 1) * dim_max // num_intervals
+            x_start = i * dim_interval 
+            x_end = (i + 1) * dim_interval 
+            y_start = j * dim_interval 
+            y_end = (j + 1) * dim_interval
 
             quadrant = x[x_start:x_end, y_start:y_end].reshape(1, -1, dim_2)
             quadrants.append(quadrant)
     
     concatenated_quadrants = T.concat(quadrants)
+
+    print(x.shape)
+    print(concatenated_quadrants.shape)
 
     return concatenated_quadrants
 
@@ -138,3 +141,4 @@ def gaussian(x: T.Tensor, mean: float, std: float) -> T.Tensor:
     """
 
     return (1 / (std * sqrt(2 * pi))) * T.exp(-(1 / 2) * ((x - mean) / std) ** 2)
+
