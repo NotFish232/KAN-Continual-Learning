@@ -69,7 +69,7 @@ def num_parameters(module: nn.Module) -> int:
 
 
 def kan_reg_term(
-    kan: nn.Module,
+    kan: KAN,
     lamb: float = 0.0,
     lamb_l1: float = 1.0,
     lamb_entropy: float = 2.0,

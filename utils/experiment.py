@@ -111,6 +111,7 @@ def run_experiment(
             base_loss_fn = training_args.loss_fn or nn.MSELoss()  # TODO: FIXME
             training_args.loss_fn = None
             if model_name.startswith("kan"):
+                assert isinstance(model, KAN)
                 reg = kan_reg_term(model)
                 loss_fn = lambda *args, **kwargs: (
                     base_loss_fn(*args, **kwargs) + reg()
