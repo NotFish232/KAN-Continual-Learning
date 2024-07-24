@@ -1,10 +1,9 @@
-import math
 from pathlib import Path
 
 import torch as T
 from torch.utils.data import Dataset, TensorDataset
 
-from utils import gaussian
+from utils import gaussian, partition_2d_graph
 from utils.architecture import KAN_ARCHITECTURE, MLP_ARCHITECTURE
 from utils.data_management import ExperimentDataType
 from utils.experiment import run_experiment
@@ -22,7 +21,6 @@ NUM_EPOCHS = 20
 PARAMETER_COUNTS = [50, 100, 1_000]
 
 
-
 def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
     axis = T.linspace(0, NUM_PEAKS, NUM_POINTS, device=device)
     X = T.cartesian_prod(axis, axis)
@@ -34,17 +32,8 @@ def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
                 gaussian(axis, j + 0.5, GAUSSIAN_STD_2),
             ).sum(dim=-1, keepdim=True)
 
-    # evil permuting to create tensor that is partitioned into n square shaped domain tasks
-    X = (
-        X.reshape(*([int(math.sqrt(NUM_POINTS))] * 4), 2)
-        .permute(0, 2, 1, 3, 4)
-        .reshape(-1, 2)
-    )
-    Y = (
-        Y.reshape([int(math.sqrt(NUM_POINTS))] * 4)
-        .permute(0, 2, 1, 3)
-        .reshape(-1, 1)
-    )
+    X = partition_2d_graph(X, NUM_PEAKS)
+    Y = partition_2d_graph(Y, NUM_PEAKS)
 
     return X, Y
 
@@ -77,7 +66,7 @@ def main() -> None:
             "sp_trainable": False,
             "sb_trainable": False,
         },
-        training_args=TrainModelArguments(num_epochs=NUM_EPOCHS)
+        training_args=TrainModelArguments(num_epochs=NUM_EPOCHS),
     )
 
 

@@ -1,9 +1,53 @@
+import math
 from math import pi, sqrt
 from typing import Callable
 
 import torch as T
 from kan import KAN
 from torch import nn
+
+
+def partition_2d_graph(x: T.Tensor, num_intervals: int) -> T.Tensor:
+    """
+    Takes a tensor resulting from the cartesian product of two equal ranges
+    and transforms it to a tensor partitioned into num_intervals ^ 2 quadrants
+    input shape (# divisible by num_intervals ^ 2, n)
+    output shape (num_intervals ^ 2, num / num_intervals ^ 2, n)
+
+    Parameters
+    ----------
+    x : T.Tensor
+        Tensor to partition
+    num_intervals : int
+        Number of intervals for both axes
+
+    Returns
+    -------
+    T.Tensor
+        Partitioned tensor
+    """
+
+    dim_1, dim_2 = x.shape
+
+    dim_max = math.isqrt(dim_1 // num_intervals ** 2)
+
+    x = x.reshape(math.isqrt(dim_1), math.isqrt(dim_1), -1)
+
+    quadrants = []
+
+    for i in range(num_intervals):
+        for j in range(num_intervals):
+            x_start = i * dim_max // num_intervals
+            x_end = (i + 1) * dim_max // num_intervals
+            y_start = j * dim_max // num_intervals
+            y_end = (j + 1) * dim_max // num_intervals
+
+            quadrant = x[x_start:x_end, y_start:y_end].reshape(1, -1, dim_2)
+            quadrants.append(quadrant)
+    
+    concatenated_quadrants = T.concat(quadrants)
+
+    return concatenated_quadrants
 
 
 def num_parameters(module: nn.Module) -> int:
