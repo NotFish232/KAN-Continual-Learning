@@ -110,7 +110,7 @@ def run_experiment(
             # add regularization term to kan training
             base_loss_fn = training_args.loss_fn or nn.MSELoss()  # TODO: FIXME
             training_args.loss_fn = None
-            if model_name == "kan":
+            if model_name.startswith("kan"):
                 reg = kan_reg_term(kan)
                 loss_fn = lambda *args, **kwargs: (
                     base_loss_fn(*args, **kwargs) + reg()
