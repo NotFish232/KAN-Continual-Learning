@@ -13,6 +13,9 @@ FIGURES_PATH = Path(__file__).parents[1] / "figures"
 
 TEMPLATE = "simple_white"
 
+IMG_WDITH = 1080
+IMG_HEIGHT = 720
+
 
 def plotly_colors(k: int | None = None) -> Generator[str, None, None]:
     """
@@ -92,7 +95,9 @@ def create_metric_graphs(experiment_reader: ExperimentReader) -> dict[str, go.Fi
 
         num_points = -1
 
-        for (model, values), color in zip(metric_data.items(), plotly_colors(k=len(metric_data) // 2)):
+        for (model, values), color in zip(
+            metric_data.items(), plotly_colors(k=len(metric_data) // 2)
+        ):
             trace = go.Scatter(
                 y=values,
                 name=model.upper().replace("_", " "),
@@ -106,7 +111,7 @@ def create_metric_graphs(experiment_reader: ExperimentReader) -> dict[str, go.Fi
             traces,
             layout=go.Layout(
                 title=go.layout.Title(
-                    text=f"{experiment_name(experiment_reader)}: {metric.capitalize()} Loss"
+                    text=f"<b>{experiment_name(experiment_reader)}: {metric.capitalize()} Loss</b>"
                 ),
                 title_x=0.5,
                 xaxis_title="Training Batch",
@@ -174,10 +179,12 @@ def plot_1d_prediction_graph(experiment_reader: ExperimentReader) -> go.Figure:
     plot.update_yaxes(showticklabels=False, showgrid=False, range=graph_range)
     plot.update_layout(
         {
-            "title": {"text":f"{experiment_name(experiment_reader)}: Model Predictions"},
+            "title": {
+                "text": f"{experiment_name(experiment_reader)}: Model Predictions"
+            },
             "title_x": 0.5,
             "template": TEMPLATE,
-            "legend_tracegroupgap": 28,
+            "legend_tracegroupgap": 60,
         }
     )
 
@@ -310,7 +317,7 @@ def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
                             name=f"{model.capitalize()} {metric.capitalize()}",
                             legendgroup=model,
                             showlegend=row_idx + col_idx == 0,
-                            opacity=0.1,
+                            opacity=1,
                             showscale=False,
                             hoverinfo="skip",
                         ),
@@ -321,25 +328,25 @@ def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
     # don't draw other baseline stuff for 2d
     del predictions["base"]
 
-    for row_idx, (model, task_data) in enumerate(predictions.items()):
-        for col_idx in range(num_tasks):
-            for metric, values in task_data.items():
-                if isinstance(values, list):
-                    plot.add_trace(
-                        go.Surface(
-                            z=values[col_idx]
-                            .reshape([round(math.sqrt(num_points))] * 4)
-                            .permute(0, 2, 1, 3)
-                            .reshape(num_points, num_points),
-                            name=f"{model.capitalize()} {metric.capitalize()}",
-                            legendgroup=model,
-                            showlegend=col_idx == 0,
-                            showscale=False,
-                            hoverinfo="skip",
-                        ),
-                        row_idx + 1,
-                        col_idx + 1,
-                    )
+    # for row_idx, (model, task_data) in enumerate(predictions.items()):
+    #     for col_idx in range(num_tasks):
+    #         for metric, values in task_data.items():
+    #             if isinstance(values, list):
+    #                 plot.add_trace(
+    #                     go.Surface(
+    #                         z=values[col_idx]
+    #                         .reshape([round(math.sqrt(num_points))] * 4)
+    #                         .permute(0, 2, 1, 3)
+    #                         .reshape(num_points, num_points),
+    #                         name=f"{model.capitalize()} {metric.capitalize()}",
+    #                         legendgroup=model,
+    #                         showlegend=col_idx == 0,
+    #                         showscale=False,
+    #                         hoverinfo="skip",
+    #                     ),
+    #                     row_idx + 1,
+    #                     col_idx + 1,
+    #                 )
 
     return plot
 
@@ -369,14 +376,14 @@ def main() -> None:
 
         for metric, metric_graph in metric_graphs.items():
             graph_path = experiment_path / f"{metric}_figure.png"
-            metric_graph.write_image(graph_path)
+            metric_graph.write_image(graph_path, width=IMG_WDITH, height=IMG_HEIGHT)
 
         prediction_graph = create_prediction_graph(reader)
         if prediction_graph is not None:
             prediction_path = experiment_path / "predictions.png"
-            prediction_graph.write_image(prediction_path)
+            prediction_graph.write_image(prediction_path, width=IMG_WDITH, height=IMG_HEIGHT)
 
-        # exit(1)
+        exit(1)
 
 
 if __name__ == "__main__":
