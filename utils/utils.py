@@ -77,7 +77,7 @@ def kan_reg_term(
     lamb_coefdiff: float = 0.0,
     small_mag_threshold: float = 1e-16,
     small_reg_factor: float = 1.0,
-) -> Callable:
+) -> Callable[[], T.Tensor]:
     """
     MSE Loss with regularization term lifted from pykan's implmentation
 
