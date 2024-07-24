@@ -14,7 +14,7 @@ FIGURES_PATH = Path(__file__).parents[1] / "figures"
 TEMPLATE = "simple_white"
 
 
-def plotly_colors() -> Generator[str, None, None]:
+def plotly_colors(k: int | None = None) -> Generator[str, None, None]:
     """
     Yields sequences of distinctive colors for plotly plots
 
@@ -23,6 +23,10 @@ def plotly_colors() -> Generator[str, None, None]:
     Generator[str, None, None]
         Yields indefinitely a cycle of distinctive colors
     """
+
+    # 3 blues and 3 reds
+    if k == 3:
+        yield from ("#05299E", "#3F88C5", "#44BBA4", "#BA1B1D", "#B5446E", "#FB5461")
 
     yield from cycle(
         (
@@ -36,6 +40,16 @@ def plotly_colors() -> Generator[str, None, None]:
             "#33FF99",
             "#FF3333",
         )
+    )
+
+
+def experiment_name(experiment_reader: ExperimentReader) -> str:
+    """
+    Gets nicely formatted name from an `ExperimentReader`
+    """
+
+    return " ".join(
+        s.capitalize() for s in experiment_reader.experiment_name.split("_")
     )
 
 
@@ -78,7 +92,7 @@ def create_metric_graphs(experiment_reader: ExperimentReader) -> dict[str, go.Fi
 
         num_points = -1
 
-        for (model, values), color in zip(metric_data.items(), plotly_colors()):
+        for (model, values), color in zip(metric_data.items(), plotly_colors(k=len(metric_data) // 2)):
             trace = go.Scatter(
                 y=values,
                 name=model.upper().replace("_", " "),
@@ -91,7 +105,9 @@ def create_metric_graphs(experiment_reader: ExperimentReader) -> dict[str, go.Fi
         plot = go.Figure(
             traces,
             layout=go.Layout(
-                title=go.layout.Title(text=f"{metric.capitalize()} Loss"),
+                title=go.layout.Title(
+                    text=f"{experiment_name(experiment_reader)}: {metric.capitalize()} Loss"
+                ),
                 title_x=0.5,
                 xaxis_title="Training Batch",
                 yaxis_title=f"{metric.capitalize()} Loss (RMSE)",
@@ -157,7 +173,12 @@ def plot_1d_prediction_graph(experiment_reader: ExperimentReader) -> go.Figure:
     plot.update_xaxes(showticklabels=False, showgrid=False)
     plot.update_yaxes(showticklabels=False, showgrid=False, range=graph_range)
     plot.update_layout(
-        {"title": {"text": "Predictions"}, "title_x": 0.5, "template": TEMPLATE}
+        {
+            "title": {"text":f"{experiment_name(experiment_reader)}: Model Predictions"},
+            "title_x": 0.5,
+            "template": TEMPLATE,
+            "legend_tracegroupgap": 28,
+        }
     )
 
     for metric, values in predictions["base"].items():
@@ -285,9 +306,7 @@ def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
                 for col_idx in range(num_tasks):
                     plot.add_trace(
                         go.Surface(
-                            z=values.reshape([round(math.sqrt(num_points))] * 4)
-                            .permute(0, 2, 1, 3)
-                            .reshape(num_points, num_points),
+                            z=values.reshape(num_points, num_points).permute(1, 0),
                             name=f"{model.capitalize()} {metric.capitalize()}",
                             legendgroup=model,
                             showlegend=row_idx + col_idx == 0,
@@ -353,10 +372,11 @@ def main() -> None:
             metric_graph.write_image(graph_path)
 
         prediction_graph = create_prediction_graph(reader)
-        prediction_path = experiment_path / "predictions.png"
-        prediction_graph.write_image(prediction_path)
+        if prediction_graph is not None:
+            prediction_path = experiment_path / "predictions.png"
+            prediction_graph.write_image(prediction_path)
 
-        exit(1)
+        # exit(1)
 
 
 if __name__ == "__main__":
