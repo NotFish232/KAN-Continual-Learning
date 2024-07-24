@@ -32,9 +32,6 @@ def create_dataset(device: T.device) -> tuple[T.Tensor, T.Tensor]:
                 gaussian(axis, j + 0.5, GAUSSIAN_STD_2),
             ).sum(dim=-1, keepdim=True)
 
-    X = partition_2d_graph(X, NUM_PEAKS).reshape(-1, 2)
-    Y = partition_2d_graph(Y, NUM_PEAKS).reshape(-1, 1)
-
     return X, Y
 
 
@@ -42,8 +39,9 @@ def main() -> None:
     device = T.device("cuda" if T.cuda.is_available() else "cpu")
 
     X, Y = create_dataset(device)
-    X_partitioned = list(T.chunk(X, NUM_PEAKS**2))
-    Y_partitioned = list(T.chunk(Y, NUM_PEAKS**2))
+
+    X_partitioned = list(partition_2d_graph(X, NUM_PEAKS))
+    Y_partitioned = list(partition_2d_graph(Y, NUM_PEAKS))
 
     function_dataset = TensorDataset(X, Y)
     partitioned_datasets: list[Dataset] = []
