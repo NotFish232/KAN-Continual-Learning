@@ -1,5 +1,5 @@
 import math
-from itertools import cycle
+from itertools import cycle, islice
 from pathlib import Path
 from typing import Generator
 
@@ -17,6 +17,28 @@ IMG_WDITH = 1080
 IMG_HEIGHT = 720
 
 
+def plotly_line_types() -> Generator[str, None, None]:
+    """
+    Yields sequences of different line types
+
+    Yields
+    ------
+    Generator[str, None, None]
+        A line type to pass to `go.scatter.Line` constructor
+    """
+
+    yield from cycle(
+        (
+            "solid",
+            "dash",
+            "longdashdot",
+            "dot",
+            "longdash",
+            "dashdot",
+        )
+    )
+
+
 def plotly_colors(k: int | None = None) -> Generator[str, None, None]:
     """
     Yields sequences of distinctive colors for plotly plots
@@ -29,7 +51,7 @@ def plotly_colors(k: int | None = None) -> Generator[str, None, None]:
 
     # 3 blues and 3 reds
     if k == 3:
-        yield from ("#05299E", "#3F88C5", "#44BBA4", "#BA1B1D", "#B5446E", "#FB5461")
+        yield from ("#05299E", "#3F88C5", "#24BBD4", "#BA1B1D", "#B5446E", "#FB5461")
 
     yield from cycle(
         (
@@ -95,14 +117,18 @@ def create_metric_graphs(experiment_reader: ExperimentReader) -> dict[str, go.Fi
 
         num_points = -1
 
-        for (model, values), color in zip(
-            metric_data.items(), plotly_colors(k=len(metric_data) // 2)
+        num_models = len(metric_data) // 2
+
+        line_types = [*islice(plotly_line_types(), num_models)]
+
+        for i, ((model, values), color) in enumerate(
+            zip(metric_data.items(), plotly_colors(k=num_models))
         ):
             trace = go.Scatter(
                 y=values,
                 name=model.upper().replace("_", " "),
                 showlegend=True,
-                line=go.scatter.Line(color=color),
+                line=go.scatter.Line(color=color, dash=line_types[i % num_models]),
             )
             traces.append(trace)
             num_points = len(values)
@@ -381,7 +407,9 @@ def main() -> None:
         prediction_graph = create_prediction_graph(reader)
         if prediction_graph is not None:
             prediction_path = experiment_path / "predictions.png"
-            prediction_graph.write_image(prediction_path, width=IMG_WDITH, height=IMG_HEIGHT)
+            prediction_graph.write_image(
+                prediction_path, width=IMG_WDITH, height=IMG_HEIGHT
+            )
 
         exit(1)
 
