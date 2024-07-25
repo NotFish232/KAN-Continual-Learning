@@ -416,9 +416,7 @@ def create_prediction_graph(experiment_reader: ExperimentReader) -> go.Figure:
 
 
 def main() -> None:
-    for experiment in [
-        "04_multivariable_function"
-    ]:  # ExperimentReader.get_experiments():
+    for experiment in ExperimentReader.get_experiments():
         reader = ExperimentReader(experiment)
         reader.read()
 
@@ -438,7 +436,7 @@ def main() -> None:
                 prediction_path, width=IMG_WDITH, height=IMG_HEIGHT
             )
 
-        # exit(1)
+
 
 
 if __name__ == "__main__":
