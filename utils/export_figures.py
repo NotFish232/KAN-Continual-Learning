@@ -12,6 +12,7 @@ from utils.data_management import ExperimentDataType, ExperimentReader
 FIGURES_PATH = Path(__file__).parents[1] / "figures"
 
 TEMPLATE = "simple_white"
+TEMPLATE_2D = "none"
 
 IMG_WDITH = 1080
 IMG_HEIGHT = 720
@@ -31,8 +32,8 @@ def plotly_line_types() -> Generator[str, None, None]:
         (
             "solid",
             "dash",
-            "longdashdot",
             "dot",
+            "longdashdot",
             "longdash",
             "dashdot",
         )
@@ -137,7 +138,7 @@ def create_metric_graphs(experiment_reader: ExperimentReader) -> dict[str, go.Fi
             traces,
             layout=go.Layout(
                 title=go.layout.Title(
-                    text=f"<b>{experiment_name(experiment_reader)}: {metric.capitalize()} Loss</b>"
+                    text=f"{experiment_name(experiment_reader)}: {metric.capitalize()} Loss"
                 ),
                 title_x=0.5,
                 xaxis_title="Training Batch",
@@ -308,42 +309,56 @@ def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
     assert num_tasks is not None and num_points is not None and graph_range is not None
 
     # 2d task so num_points represents num_points on each axis
-    num_points = round(math.sqrt(num_points))
+    # same thing with num_tasks
+    num_points = math.isqrt(num_points)
+    num_tasks = math.isqrt(num_tasks)
 
     # create subplots where each row is a model and each column is a task
     plot = make_subplots(
-        rows=len(predictions) - 1,
-        cols=num_tasks,
+        rows=len(predictions),
+        cols=num_tasks**2,
+        horizontal_spacing=0,
+        vertical_spacing=0,
         specs=[
-            [{"type": "surface"} for _ in range(num_tasks)]
-            for _ in range(len(predictions) - 1)
+            [{"type": "surface"} for _ in range(num_tasks**2)]
+            for _ in range(len(predictions))
         ],
     )
     # add plot title
-    plot.update_layout({"title": {"text": "Predictions"}})
+    plot.update_layout(
+        {
+            "title": go.layout.Title(
+                text=f"{experiment_name(experiment_reader)}: Model Predictions"
+            ),
+            "title_x": 0.5,
+            "margin": go.layout.Margin(l=0, b=20),
+            "template": TEMPLATE_2D,
+            "legend_tracegroupgap": 67,
+        }
+    )
 
     # remove ticks from all subplots
     plot.update_layout(
         {
             f"scene{i}": {
-                axis: {"showticklabels": False} for axis in ("xaxis", "yaxis", "zaxis")
+                axis: {"visible": False} for axis in ("xaxis", "yaxis", "zaxis")
             }
-            for i in range(1, num_tasks * len(predictions))
+            for i in range(1, num_tasks**2 * len(predictions) + 1)
         }
     )
 
     for metric, values in predictions["base"].items():
         # plot all non task specific baselines on all subplots
         if isinstance(values, T.Tensor):
-            for row_idx in range(len(predictions) - 1):
-                for col_idx in range(num_tasks):
+            for row_idx in range(len(predictions)):
+                for col_idx in range(num_tasks**2):
                     plot.add_trace(
                         go.Surface(
+                            x=T.linspace(0, num_tasks, num_points),
+                            y=T.linspace(0, num_tasks, num_points),
                             z=values.reshape(num_points, num_points).permute(1, 0),
-                            name=f"{model.capitalize()} {metric.capitalize()}",
-                            legendgroup=model,
-                            showlegend=row_idx + col_idx == 0,
-                            opacity=1,
+                            opacity=0.1,
+                            showlegend=False,
                             showscale=False,
                             hoverinfo="skip",
                         ),
@@ -351,28 +366,38 @@ def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
                         col_idx + 1,
                     )
 
-    # don't draw other baseline stuff for 2d
-    del predictions["base"]
+    for row_idx, (model, task_data) in enumerate(predictions.items()):
+        for col_idx in range(num_tasks**2):
+            for metric, values in task_data.items():
+                if isinstance(values, list):
+                    if len(values[col_idx]) == num_points**2:
+                        x = T.linspace(0, num_tasks, num_points)
+                        y = T.linspace(0, num_tasks, num_points)
+                    else:
+                        row = col_idx // num_tasks
+                        col = col_idx % num_tasks
+                        x = T.linspace(row, row + 1, num_points // num_tasks)
+                        y = T.linspace(col, col + 1, num_points // num_tasks)
 
-    # for row_idx, (model, task_data) in enumerate(predictions.items()):
-    #     for col_idx in range(num_tasks):
-    #         for metric, values in task_data.items():
-    #             if isinstance(values, list):
-    #                 plot.add_trace(
-    #                     go.Surface(
-    #                         z=values[col_idx]
-    #                         .reshape([round(math.sqrt(num_points))] * 4)
-    #                         .permute(0, 2, 1, 3)
-    #                         .reshape(num_points, num_points),
-    #                         name=f"{model.capitalize()} {metric.capitalize()}",
-    #                         legendgroup=model,
-    #                         showlegend=col_idx == 0,
-    #                         showscale=False,
-    #                         hoverinfo="skip",
-    #                     ),
-    #                     row_idx + 1,
-    #                     col_idx + 1,
-    #                 )
+                    plot.add_trace(
+                        go.Surface(
+                            x=x,
+                            y=y,
+                            z=values[col_idx].reshape(len(x), len(y)),
+                            name=(
+                                model.upper().replace("_", " ")
+                                if model != "base"
+                                else model.capitalize()
+                            ),
+                            opacity=1,
+                            legendgroup=model,
+                            showlegend=col_idx == 0,
+                            showscale=False,
+                            hoverinfo="skip",
+                        ),
+                        row_idx + 1,
+                        col_idx + 1,
+                    )
 
     return plot
 
@@ -391,7 +416,9 @@ def create_prediction_graph(experiment_reader: ExperimentReader) -> go.Figure:
 
 
 def main() -> None:
-    for experiment in ExperimentReader.get_experiments():
+    for experiment in [
+        "04_multivariable_function"
+    ]:  # ExperimentReader.get_experiments():
         reader = ExperimentReader(experiment)
         reader.read()
 
@@ -411,7 +438,7 @@ def main() -> None:
                 prediction_path, width=IMG_WDITH, height=IMG_HEIGHT
             )
 
-        exit(1)
+        # exit(1)
 
 
 if __name__ == "__main__":
