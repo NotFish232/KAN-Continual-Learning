@@ -11,8 +11,8 @@ from utils.training import TrainModelArguments
 
 EXPERIMENT_NAME = Path(__file__).stem
 
-NUM_PEAKS = 2
-NUM_POINTS = 64
+NUM_PEAKS = 3
+NUM_POINTS = 96
 GAUSSIAN_STD_1 = 0.2
 GAUSSIAN_STD_2 = 0.1
 
