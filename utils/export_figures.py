@@ -138,7 +138,7 @@ def create_metric_graphs(experiment_reader: ExperimentReader) -> dict[str, go.Fi
             traces,
             layout=go.Layout(
                 title=go.layout.Title(
-                    text=f"{experiment_name(experiment_reader)}: {metric.capitalize()} Loss"
+                    text=f"<span style='font-size: 28px;'>{experiment_name(experiment_reader)}: {metric.capitalize()} Loss</span>",
                 ),
                 title_x=0.5,
                 xaxis_title="Training Batch",
@@ -207,8 +207,9 @@ def plot_1d_prediction_graph(experiment_reader: ExperimentReader) -> go.Figure:
     plot.update_layout(
         {
             "title": {
-                "text": f"{experiment_name(experiment_reader)}: Model Predictions"
+                "text": f"<span style='font-size: 28px;'>{experiment_name(experiment_reader)}: Model Predictions</span>"
             },
+            "titlefont": go.layout.title.Font(color="black"),
             "title_x": 0.5,
             "template": TEMPLATE,
             "legend_tracegroupgap": 60,
@@ -328,10 +329,11 @@ def plot_2d_prediction_graph(experiment_reader: ExperimentReader) -> None:
     plot.update_layout(
         {
             "title": go.layout.Title(
-                text=f"{experiment_name(experiment_reader)}: Model Predictions"
+                text=f"<span style='font-size: 28px;'>{experiment_name(experiment_reader)}: Model Predictions</span>"
             ),
+            "titlefont": go.layout.title.Font(color="black"),
             "title_x": 0.5,
-            "margin": go.layout.Margin(l=0, b=20),
+            "margin": go.layout.Margin(l=0, b=25),
             "template": TEMPLATE_2D,
             "legend_tracegroupgap": 67,
         }
